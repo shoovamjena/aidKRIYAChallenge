@@ -1,14 +1,12 @@
-package com.example.aidkriyachallenge.dummyUi
+package com.example.aidkriyachallenge.googleauthentication
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
-import android.os.Build
-import android.util.Log
-import androidx.annotation.RequiresApi
-import androidx.credentials.CustomCredential
 import com.example.aidkriyachallenge.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -22,7 +20,6 @@ class GoogleAuthClient(
     private val tag = "GoogleAuthClient: "
     private val credentialManager = CredentialManager.create(context)
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     suspend fun getGoogleIdToken(): String? {
         return try {
             val result = buildCredentialRequest()
@@ -55,7 +52,6 @@ class GoogleAuthClient(
         return null
     }
 
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private suspend fun buildCredentialRequest(): GetCredentialResponse {
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(
@@ -81,7 +77,7 @@ class GoogleAuthClient(
         }
     }
 
-    suspend fun signOut() {
+     suspend fun signOut() {
         credentialManager.clearCredentialState(ClearCredentialStateRequest())
     }
 }

@@ -79,9 +79,16 @@ dependencies {
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth")
-
-
-
     // Declare the dependency for the Firestore library
+    //Lottie Animation
+    implementation("com.airbnb.android:lottie-compose:4.0.0")
+    //Adaptive app
+    implementation(libs.androidx.adaptive.v100)
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation("androidx.window:window:1.4.0")
+    //System Splash
+    implementation("androidx.core:core-splashscreen:1.0.1")
+    //Datastore
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
 
 }

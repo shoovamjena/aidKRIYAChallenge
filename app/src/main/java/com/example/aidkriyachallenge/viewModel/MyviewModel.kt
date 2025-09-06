@@ -1,25 +1,81 @@
-package com.example.aidkriyachallenge.viewModel
+package com.example.aidkriyachallenge.viewmodel
 
+import android.annotation.SuppressLint
+import android.app.Application
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aidkriyachallenge.common.ResultState
+import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.dataModel.UserProfile
+import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.repo.repo
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 @HiltViewModel
-class MyviewModel @Inject constructor(
-    private val repo: repo
+class MyViewModel @Inject constructor(
+    private val repo: repo,
+    application: Application,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(LoginUIstate())
-    val state: StateFlow<LoginUIstate> = _state.asStateFlow()
+    @SuppressLint("StaticFieldLeak")
+    private val context = application.applicationContext
+    private val _state = MutableStateFlow(LoginUiState())
+    val state: StateFlow<LoginUiState> = _state.asStateFlow()
+
+    private val _isInitialized = MutableStateFlow(false)
+
+    private val googleAuthClient = GoogleAuthClient(application.applicationContext)
+    // Session flow from DataStore
+    val userEmail = UserPreferences.getUserEmail(context)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // ✅ Save email after successful login/signup
+    private fun cacheUser(email: String) = viewModelScope.launch {
+        UserPreferences.saveUserEmail(context, email)
+    }
+
+    // ✅ Clear email on logout
+    fun logout() {
+        //Resetting state
+        _state.value = LoginUiState()
+
+        viewModelScope.launch {
+            FirebaseAuth.getInstance().signOut()
+            UserPreferences.clearUserEmail(context)
+            googleAuthClient.signOut()
+        }
+    }
+
+    init {
+        // Initialize authentication state
+        initializeAuth()
+    }
+
+    private fun initializeAuth() = viewModelScope.launch {
+        try {
+            // Wait for userEmail to be loaded from DataStore
+            userEmail.collect { email ->
+                if (email != null) {
+                    // User is logged in, update state
+                    _state.value = _state.value.copy(user = UserProfile(email = email))
+                }
+                _isInitialized.value = true
+                return@collect // Stop collecting after first emit
+            }
+        } catch (e: Exception) {
+            Log.e("MyViewModel", "Error initializing auth", e)
+            _isInitialized.value = true
+        }
+    }
 
 
     fun onEvent(event: AuthEvent) {
@@ -30,17 +86,20 @@ class MyviewModel @Inject constructor(
             is AuthEvent.ForgotPassword -> forgotPassword(event.email)
             AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
         }
+
     }
 
 
     private fun signUp(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
         when (val res = repo.SignUp(email, password)) {
-            is ResultState.Success -> _state.value =
-                LoginUIstate(user = res.data, isLoading = false)
+            is ResultState.Success -> {_state.value =
+                LoginUiState(user = res.data, isLoading = false)
+                cacheUser(email)
+                }
 
             is ResultState.Error -> _state.value =
-                LoginUIstate(error = res.message, isLoading = false)
+                LoginUiState(error = res.message, isLoading = false)
 
             ResultState.Loading -> {}
         }
@@ -50,11 +109,14 @@ class MyviewModel @Inject constructor(
     private fun signIn(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
         when (val res = repo.SignIn(email, password)) {
-            is ResultState.Success -> _state.value =
-                LoginUIstate(user = res.data, error = null, isLoading = false)
+            is ResultState.Success -> {
+                _state.value =
+                    LoginUiState(user = res.data, error = null, isLoading = false)
+                cacheUser(email)
+            }
 
             is ResultState.Error -> _state.value =
-                LoginUIstate(error = res.message, isLoading = false)
+                LoginUiState(error = res.message, isLoading = false)
 
             ResultState.Loading -> {}
         }
@@ -66,7 +128,8 @@ class MyviewModel @Inject constructor(
         when (val res = repo.signInWithGoogle(idToken)) {
             is ResultState.Success ->{
                 Log.d("MyViewModel", "Google sign-in success: ${res.data}")
-                _state.value = LoginUIstate(user = res.data, isLoading = false,error = null)
+                _state.value = LoginUiState(user = res.data, isLoading = false,error = null)
+                res.data.email.let { cacheUser(it) }
             }
 
             is ResultState.Error ->{
@@ -101,8 +164,8 @@ sealed class AuthEvent {
     data class ForgotPassword(val email: String) : AuthEvent()
 }
 
-data class LoginUIstate(
+data class LoginUiState(
     val isLoading: Boolean = false,
     val user: UserProfile? = null,
-    val error: String? = null
+    var error: String? = null
 )

@@ -2,9 +2,11 @@ package com.example.aidkriyachallenge.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.aidkriyachallenge.R
 
 // Set of Material typography styles to start with
 val Typography = Typography(
@@ -31,4 +33,19 @@ val Typography = Typography(
         letterSpacing = 0.5.sp
     )
     */
+)
+val fredoka = FontFamily(
+    Font(R.font.fredoka, FontWeight.Normal),
+    Font(R.font.fredoka, FontWeight.ExtraBold)
+)
+val odin = FontFamily(
+    Font(R.font.odin_bold,FontWeight.Bold),
+    Font(R.font.odin_regular,FontWeight.Normal)
+)
+val nothingFontFamily = FontFamily(
+    Font(R.font.nothing_font, FontWeight.Normal),
+    Font(R.font.nothing_font, FontWeight.ExtraBold)
+)
+val roundFontFamily = FontFamily(
+    Font(R.font.rounds_black, FontWeight.ExtraBold)
 )
