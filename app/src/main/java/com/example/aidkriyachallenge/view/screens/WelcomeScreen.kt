@@ -83,8 +83,8 @@ import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.view.uicomponents.LoginContent
 import com.example.aidkriyachallenge.view.uicomponents.SignUpContent
-import com.example.aidkriyachallenge.viewmodel.LoginUiState
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
+import com.example.aidkriyachallenge.viewModel.LoginUiState
+import com.example.aidkriyachallenge.viewModel.MyViewModel
 
 enum class SelectedScreen{
     Login,

@@ -88,9 +88,9 @@ import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.ui.theme.odin
-import com.example.aidkriyachallenge.viewmodel.AuthEvent
-import com.example.aidkriyachallenge.viewmodel.LoginUiState
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
+import com.example.aidkriyachallenge.viewModel.AuthEvent
+import com.example.aidkriyachallenge.viewModel.LoginUiState
+import com.example.aidkriyachallenge.viewModel.MyViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
