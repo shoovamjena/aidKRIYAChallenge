@@ -7,12 +7,14 @@ import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class repo @Inject constructor(
+class Repo @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val storage: FirebaseStorage
 ) {
 
     private val users = firestore.collection(USER_PATH)
@@ -70,11 +72,27 @@ class repo @Inject constructor(
         ResultState.Error(e.message ?: "Google sign-in failed")
     }
 
+    suspend fun saveUserProfile(profile: UserProfile): ResultState<String> = try {
+        users.document(profile.uid).set(profile).await()
+        ResultState.Success("Profile saved successfully")
+    } catch (e: Exception) {
+        ResultState.Error(e.message ?: "Failed to save profile")
+    }
+
+
     suspend fun forgotPassword(email: String): ResultState<String> = try {
         auth.sendPasswordResetEmail(email).await()
         ResultState.Success("Password reset email sent")
     } catch (e: Exception) {
         ResultState.Error(e.message ?: "Failed to send reset email")
+    }
+
+    suspend fun getUserProfile(uid: String): ResultState<UserProfile?> = try {
+        val snapshot = users.document(uid).get().await()
+        val profile = snapshot.toObject(UserProfile::class.java)
+        ResultState.Success(profile)
+    } catch (e: Exception) {
+        ResultState.Error(e.localizedMessage ?: "Unknown error")
     }
 
     fun signOut() { auth.signOut() }

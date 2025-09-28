@@ -9,24 +9,44 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
 
-object UserPreferences {
+class UserPreferences(private val context: Context) {
     private val USER_EMAIL = stringPreferencesKey("user_email")
+    private val USER_ID = stringPreferencesKey("user_id")
 
-    suspend fun saveUserEmail(context: Context, email: String) {
+    suspend fun saveUserEmail(email: String) {
         context.dataStore.edit { prefs ->
             prefs[USER_EMAIL] = email
         }
     }
 
-    fun getUserEmail(context: Context): Flow<String?> {
+    fun getUserEmail(): Flow<String?> {
         return context.dataStore.data.map { prefs ->
             prefs[USER_EMAIL]
         }
     }
 
-    suspend fun clearUserEmail(context: Context) {
+    suspend fun clearUserEmail() {
         context.dataStore.edit { prefs ->
             prefs.remove(USER_EMAIL)
+        }
+    }
+
+    suspend fun saveUserID(uid: String){
+        context.dataStore.edit {prefs->
+            prefs[USER_ID] = uid
+        }
+    }
+
+    fun getUserid(): Flow<String?>{
+        return context.dataStore.data.map {prefs->
+            prefs[USER_ID]
+        }
+
+    }
+
+    suspend fun clearUid(){
+        context.dataStore.edit { prefs->
+            prefs.remove(USER_ID)
         }
     }
 }
