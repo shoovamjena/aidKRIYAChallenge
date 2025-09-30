@@ -89,9 +89,9 @@ import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.ui.theme.odin
-import com.example.aidkriyachallenge.viewModel.AuthEvent
-import com.example.aidkriyachallenge.viewModel.LoginUiState
-import com.example.aidkriyachallenge.viewModel.MyViewModel
+import com.example.aidkriyachallenge.viewmodel.AuthEvent
+import com.example.aidkriyachallenge.viewmodel.LoginUiState
+import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -639,7 +639,7 @@ fun LoginContent(
                         autoSize = TextAutoSize.StepBased(maxFontSize = 18.sp),
                         style = TextStyle(
                             fontFamily = odin,
-                            color = MaterialTheme.colorScheme.tertiary.copy(0.7f)
+                            color = MaterialTheme.colorScheme.primary.copy(0.7f)
                         ),
                         modifier = Modifier.clickable {
                             forgotDialog = true

@@ -1,9 +1,10 @@
-package com.example.aidkriyachallenge.viewModel
+package com.example.aidkriyachallenge.viewmodel
 
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aidkriyachallenge.common.ResultState
@@ -12,8 +13,6 @@ import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.repo.Repo
 import com.google.firebase.auth.FirebaseAuth
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +22,11 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import androidx.core.net.toUri
 
-
-@HiltViewModel
-class MyViewModel @Inject constructor(
+class MyViewModel (
     private val repo: Repo,
     private val userPref: UserPreferences,
-    @ApplicationContext private val context: Context
+    private val context: Context
 ) : ViewModel() {
     private val _state = MutableStateFlow(LoginUiState())
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
@@ -102,7 +97,7 @@ class MyViewModel @Inject constructor(
 
     private fun signUp(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.SignUp(email, password)) {
+        when (val res = repo.signUp(email, password)) {
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, isLoading = false)
@@ -119,7 +114,7 @@ class MyViewModel @Inject constructor(
 
     private fun signIn(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.SignIn(email, password)) {
+        when (val res = repo.signIn(email, password)) {
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, error = null, isLoading = false)

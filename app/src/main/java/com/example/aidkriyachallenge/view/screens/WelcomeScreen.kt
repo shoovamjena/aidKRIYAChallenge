@@ -65,10 +65,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,8 +81,8 @@ import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.view.uicomponents.LoginContent
 import com.example.aidkriyachallenge.view.uicomponents.SignUpContent
-import com.example.aidkriyachallenge.viewModel.LoginUiState
-import com.example.aidkriyachallenge.viewModel.MyViewModel
+import com.example.aidkriyachallenge.viewmodel.LoginUiState
+import com.example.aidkriyachallenge.viewmodel.MyViewModel
 
 enum class SelectedScreen{
     Login,
@@ -473,7 +471,7 @@ fun LoginSignUpToggle(
     val windowSize = calculateWindowSizeClass(activity)
     val widthSize = windowSize.widthSizeClass
     val heightSize = windowSize.heightSizeClass
-    val haptics = LocalHapticFeedback.current
+    val haptics = LocalView.current
 
     // SDK / Theme checks
     val isAndroid12OrAbove = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
@@ -568,7 +566,7 @@ fun LoginSignUpToggle(
                     .fillMaxHeight()
                     .clickable(interactionSource, null) {
                         onScreenSelected(SelectedScreen.Login)
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        haptics.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -596,7 +594,7 @@ fun LoginSignUpToggle(
                     .fillMaxHeight()
                     .clickable(interactionSource, null) {
                         onScreenSelected(SelectedScreen.SignUp)
-                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        haptics.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                     },
                 contentAlignment = Alignment.Center
             ) {

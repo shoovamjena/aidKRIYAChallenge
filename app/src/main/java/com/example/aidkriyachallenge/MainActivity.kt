@@ -11,23 +11,37 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.navControl.AppNavHost
+import com.example.aidkriyachallenge.repo.Repo
 import com.example.aidkriyachallenge.ui.theme.AidKRIYAChallengeTheme
-import dagger.hilt.android.AndroidEntryPoint
+import com.example.aidkriyachallenge.viewmodel.MyViewModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val auth = FirebaseAuth.getInstance()
+        val storage = FirebaseStorage.getInstance()
+        val firestore = FirebaseFirestore.getInstance()
+        val repo = Repo(firestore, auth)
+        val userPref = UserPreferences(this)
+        val viewModel = MyViewModel(
+            repo = repo,
+            userPref = userPref,
+            context = this
+        )
         window.attributes.layoutInDisplayCutoutMode =
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
         setContent {
             AidKRIYAChallengeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    AppNavHost()
+                    AppNavHost(viewModel)
                 }
             }
         }

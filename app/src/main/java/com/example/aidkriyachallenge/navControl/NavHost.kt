@@ -8,21 +8,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.aidkriyachallenge.dummyui.ProfileScreen
+import com.example.aidkriyachallenge.dummyUi.ProfileScreen
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.view.screens.HomeScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
-import com.example.aidkriyachallenge.viewModel.AuthEvent
-import com.example.aidkriyachallenge.viewModel.MyViewModel
+import com.example.aidkriyachallenge.viewmodel.AuthEvent
+import com.example.aidkriyachallenge.viewmodel.MyViewModel
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun AppNavHost(viewModel: MyViewModel = hiltViewModel()) {
+fun AppNavHost(viewModel: MyViewModel) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val navController = rememberNavController()
@@ -75,7 +74,7 @@ fun AppNavHost(viewModel: MyViewModel = hiltViewModel()) {
         }
 
         composable(route = "profileSk"){
-            ProfileScreen()
+            ProfileScreen(viewModel)
         }
     }
 }
