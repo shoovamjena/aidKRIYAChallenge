@@ -36,6 +36,7 @@ import com.example.aidkriyachallenge.viewmodel.MyViewModel
 fun ProfileScreen(viewModel: MyViewModel) {
     val state by viewModel.Profilestate.collectAsState()
     val userId by viewModel.userId.collectAsState()
+    val isWanderer by viewModel.userRole.collectAsState()
 
     var isEditing by remember { mutableStateOf(false) }
 
@@ -66,7 +67,7 @@ fun ProfileScreen(viewModel: MyViewModel) {
 
         // Show calculated age (always read-only, from DOB)
         state.dob?.let {
-            val age = UserProfile(dob = it).calculateAge()
+            val age = UserProfile(dob = it, isWanderer = isWanderer == true).calculateAge()
             Text("Age: $age years", style = MaterialTheme.typography.bodyMedium)
         }
 
@@ -85,31 +86,13 @@ fun ProfileScreen(viewModel: MyViewModel) {
             modifier = Modifier.fillMaxWidth(),
             readOnly = !isEditing
         )
-
-        // Role Dropdown
-        var roleExpanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = roleExpanded && isEditing, onExpandedChange = { roleExpanded = it }) {
-            OutlinedTextField(
-                value = if (state.isWanderer) "Wanderer" else "Walker",
-                onValueChange = {},
-                label = { Text("Role") },
-                readOnly = true,
-                modifier = Modifier.menuAnchor()
-            )
-            if (isEditing) {
-                ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                    DropdownMenuItem(text = { Text("Wanderer") }, onClick = {
-                        viewModel.onRoleChanged(true)
-                        roleExpanded = false
-                    })
-                    DropdownMenuItem(text = { Text("Walker") }, onClick = {
-                        viewModel.onRoleChanged(false)
-                        roleExpanded = false
-                    })
-                }
-            }
-        }
-
+        OutlinedTextField(
+            value = if(isWanderer == true) "Wanderer" else "Walker",
+            onValueChange = {},
+            label = { Text("Address") },
+            modifier = Modifier.fillMaxWidth(),
+            readOnly = true
+        )
         // Walking speed dropdown
         var speedExpanded by remember { mutableStateOf(false) }
         ExposedDropdownMenuBox(expanded = speedExpanded && isEditing, onExpandedChange = { speedExpanded = it }) {

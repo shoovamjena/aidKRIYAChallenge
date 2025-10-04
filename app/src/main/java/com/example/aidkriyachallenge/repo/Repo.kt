@@ -2,7 +2,8 @@ package com.example.aidkriyachallenge.repo
 
 import android.util.Log
 import com.example.aidkriyachallenge.common.ResultState
-import com.example.aidkriyachallenge.common.USER_PATH
+import com.example.aidkriyachallenge.common.WALKER_PATH
+import com.example.aidkriyachallenge.common.WANDERER_PATH
 import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
@@ -14,22 +15,24 @@ class Repo(
     firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
+    private val wanderer = firestore.collection(WANDERER_PATH)
+    private val walker = firestore.collection(WALKER_PATH)
 
-    private val users = firestore.collection(USER_PATH)
 
-
-    suspend fun signUp(email: String, password: String): ResultState<UserProfile> {
+    suspend fun signUp(email: String, password: String,isWanderer: Boolean): ResultState<UserProfile> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email,password).await()
             val uid = result.user?.uid ?: return ResultState.Error("No UID returned")
 
-            val profile = UserProfile(uid = uid, email = email, createdAt = System.currentTimeMillis())
-            users.document(uid).set(profile).await()
-
-
-            ResultState.Success(profile)
-
-
+            if(isWanderer){
+                val profile = UserProfile(uid = uid, email = email, createdAt = System.currentTimeMillis(), isWanderer = true)
+                wanderer.document(uid).set(profile).await()
+                ResultState.Success(profile)
+            }else{
+                val profile = UserProfile(uid = uid, email = email, createdAt = System.currentTimeMillis(), isWanderer = false)
+                walker.document(uid).set(profile).await()
+                ResultState.Success(profile)
+            }
         }
         catch (e: Exception) {
             ResultState.Error(e.message ?: "Sign up failed")
@@ -37,19 +40,23 @@ class Repo(
     }
 
 
-    suspend fun signIn(email: String, password: String): ResultState<UserProfile> {
+    suspend fun signIn(email: String, password: String,isWanderer: Boolean): ResultState<UserProfile> {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val uid = result.user?.uid ?: return ResultState.Error("No UID")
-            val snap = users.document(uid).get().await()
-            val profile = snap.toObject(UserProfile::class.java) ?: UserProfile(uid = uid, email = email)
+            val snap = if (isWanderer) {
+                wanderer.document(uid).get().await()
+            }else{
+                walker.document(uid).get().await()
+            }
+            val profile = snap.toObject(UserProfile::class.java) ?: UserProfile(uid = uid, email = email, isWanderer = isWanderer)
             ResultState.Success(profile)
         } catch (e: Exception) {
             ResultState.Error(e.message ?: "Sign in failed")
         }
     }
 
-    suspend fun signInWithGoogle(idToken: String): ResultState<UserProfile> {
+    suspend fun signInWithGoogle(idToken: String,isWanderer: Boolean): ResultState<UserProfile> {
         return try {
             Log.d("Repo", "signInWithGoogle: got idToken=${idToken.take(15)}...")
             val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -60,15 +67,28 @@ class Repo(
 
 
     // Ensure a profile exists
-            val doc = users.document(uid).get().await()
+            val doc = if(isWanderer){
+                wanderer.document(uid).get().await()
+            }else{
+                walker.document(uid).get().await()
+            }
             if (!doc.exists()) {
                 Log.d("Repo", "No profile found, creating new one for uid=$uid")
-                val profile = UserProfile(uid = uid, email = email, createdAt = System.currentTimeMillis())
-                users.document(uid).set(profile).await()
+                val profile = UserProfile(uid = uid, email = email, createdAt = System.currentTimeMillis(), isWanderer = isWanderer)
+                if(isWanderer){
+                    wanderer.document(uid).set(profile).await()
+                }else{
+                    walker.document(uid).set(profile).await()
+                }
             }
 
-            val profile = users.document(uid).get().await().toObject(UserProfile::class.java)
-                ?: UserProfile(uid = uid, email = email)
+            val profile =if(isWanderer){
+                wanderer.document(uid).get().await().toObject(UserProfile::class.java)
+                    ?: UserProfile(uid = uid, email = email, isWanderer = isWanderer)
+            }else{
+                walker.document(uid).get().await().toObject(UserProfile::class.java)
+                    ?: UserProfile(uid = uid, email = email, isWanderer = isWanderer)
+            }
             Log.d("Repo", "Final profile loaded: $profile")
             ResultState.Success(profile)
         } catch (e: Exception) {
@@ -77,7 +97,12 @@ class Repo(
     }
 
     suspend fun saveUserProfile(profile: UserProfile): ResultState<String> = try {
-        users.document(profile.uid).set(profile).await()
+        if(profile.isWanderer){
+            wanderer.document(profile.uid).set(profile).await()
+        }else{
+            walker.document(profile.uid).set(profile).await()
+        }
+
         ResultState.Success("Profile saved successfully")
     } catch (e: Exception) {
         ResultState.Error(e.message ?: "Failed to save profile")
@@ -91,8 +116,12 @@ class Repo(
         ResultState.Error(e.message ?: "Failed to send reset email")
     }
 
-    suspend fun getUserProfile(uid: String): ResultState<UserProfile?> = try {
-        val snapshot = users.document(uid).get().await()
+    suspend fun getUserProfile(uid: String,isWanderer: Boolean): ResultState<UserProfile?> = try {
+        val snapshot =if(isWanderer){
+            wanderer.document(uid).get().await()
+        }else{
+            walker.document(uid).get().await()
+        }
         val profile = snapshot.toObject(UserProfile::class.java)
         ResultState.Success(profile)
     } catch (e: Exception) {

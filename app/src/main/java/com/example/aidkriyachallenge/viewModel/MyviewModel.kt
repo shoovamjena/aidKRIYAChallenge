@@ -42,10 +42,13 @@ class MyViewModel (
     val userId = userPref.getUserid()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val userRole = userPref.getUserRole()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     // ✅ Save email after successful login/signup
-    private fun cacheUser(email: String,uid: String) = viewModelScope.launch {
+    private fun cacheUser(email: String,uid: String,isWanderer: Boolean) = viewModelScope.launch {
         userPref.saveUserEmail(email)
         userPref.saveUserID(uid = uid)
+        userPref.saveRole(isWanderer)
     }
 
     // ✅ Clear email on logout
@@ -57,6 +60,7 @@ class MyViewModel (
             FirebaseAuth.getInstance().signOut()
             userPref.clearUserEmail()
             userPref.clearUid()
+            userPref.clearUserRole()
             googleAuthClient.signOut()
         }
     }
@@ -68,8 +72,8 @@ class MyViewModel (
 
     private fun initializeAuth() = viewModelScope.launch {
         try {
-            val profile = combine(userEmail, userId) { email, uid ->
-                if (email != null && uid != null) UserProfile(email = email, uid = uid) else null
+            val profile = combine(userEmail, userId,userRole) { email, uid ,role->
+                if (email != null && uid != null && role != null) UserProfile(email = email, uid = uid, isWanderer = role) else null
             }.firstOrNull()
 
             profile?.let { _state.value = _state.value.copy(user = it)
@@ -85,9 +89,9 @@ class MyViewModel (
 
     fun onEvent(event: AuthEvent) {
         when (event) {
-            is AuthEvent.SignUp -> signUp(event.email, event.password)
-            is AuthEvent.SignIn -> signIn(event.email, event.password)
-            is AuthEvent.Google -> google(event.idToken)
+            is AuthEvent.SignUp -> signUp(event.email, event.password,event.isWanderer)
+            is AuthEvent.SignIn -> signIn(event.email, event.password,event.isWanderer)
+            is AuthEvent.Google -> google(event.idToken,event.isWanderer)
             is AuthEvent.ForgotPassword -> forgotPassword(event.email)
             AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
         }
@@ -95,13 +99,13 @@ class MyViewModel (
     }
 
 
-    private fun signUp(email: String, password: String) = viewModelScope.launch {
+    private fun signUp(email: String, password: String,isWanderer: Boolean) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.signUp(email, password)) {
+        when (val res = repo.signUp(email, password,isWanderer)) {
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, isLoading = false)
-                cacheUser(email, uid = res.data.uid)
+                cacheUser(email, uid = res.data.uid,isWanderer)
             }
 
             is ResultState.Error -> _state.value =
@@ -112,13 +116,13 @@ class MyViewModel (
     }
 
 
-    private fun signIn(email: String, password: String) = viewModelScope.launch {
+    private fun signIn(email: String, password: String,isWanderer: Boolean) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.signIn(email, password)) {
+        when (val res = repo.signIn(email, password,isWanderer)) {
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, error = null, isLoading = false)
-                cacheUser(email, uid = res.data.uid)
+                cacheUser(email, uid = res.data.uid,isWanderer)
             }
 
             is ResultState.Error -> _state.value =
@@ -129,13 +133,13 @@ class MyViewModel (
     }
 
 
-    private fun google(idToken: String) = viewModelScope.launch {
+    private fun google(idToken: String,isWanderer: Boolean) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.signInWithGoogle(idToken)) {
+        when (val res = repo.signInWithGoogle(idToken,isWanderer)) {
             is ResultState.Success -> {
                 Log.d("MyViewModel", "Google sign-in success: ${res.data}")
                 _state.value = LoginUiState(user = res.data, isLoading = false, error = null)
-                res.data.let { cacheUser(it.email, uid = it.uid) }
+                res.data.let { cacheUser(it.email, uid = it.uid, isWanderer = it.isWanderer) }
             }
 
             is ResultState.Error -> {
@@ -210,8 +214,9 @@ class MyViewModel (
 
     fun loadProfile() = viewModelScope.launch {
         val uid = userId.firstOrNull() ?: return@launch
+        val role = userRole.firstOrNull() ?:return@launch
 
-        when (val result = repo.getUserProfile(uid)) {
+        when (val result = repo.getUserProfile(uid,role)) {
             is ResultState.Success -> {
                 result.data?.let { profile ->
                     _Profilestate.update {
@@ -242,9 +247,9 @@ class MyViewModel (
 }
 
 sealed class AuthEvent {
-    data class SignUp(val email: String, val password: String) : AuthEvent()
-    data class SignIn(val email: String, val password: String) : AuthEvent()
-    data class Google(val idToken: String) : AuthEvent()
+    data class SignUp(val email: String, val password: String,val isWanderer: Boolean) : AuthEvent()
+    data class SignIn(val email: String, val password: String,val isWanderer: Boolean) : AuthEvent()
+    data class Google(val idToken: String,val isWanderer: Boolean) : AuthEvent()
     data object ClearError : AuthEvent()
     data class ForgotPassword(val email: String) : AuthEvent()
 }

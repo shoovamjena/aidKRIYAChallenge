@@ -1,6 +1,7 @@
 package com.example.aidkriyachallenge.common
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -12,6 +13,8 @@ val Context.dataStore by preferencesDataStore(name = "user_prefs")
 class UserPreferences(private val context: Context) {
     private val USER_EMAIL = stringPreferencesKey("user_email")
     private val USER_ID = stringPreferencesKey("user_id")
+
+    private val IS_WANDERER = booleanPreferencesKey("wanderer_or_walker")
 
     suspend fun saveUserEmail(email: String) {
         context.dataStore.edit { prefs ->
@@ -47,6 +50,24 @@ class UserPreferences(private val context: Context) {
     suspend fun clearUid(){
         context.dataStore.edit { prefs->
             prefs.remove(USER_ID)
+        }
+    }
+
+    suspend fun saveRole(isWanderer: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[IS_WANDERER] = isWanderer
+        }
+    }
+
+    fun getUserRole(): Flow<Boolean?> {
+        return context.dataStore.data.map { prefs ->
+            prefs[IS_WANDERER]
+        }
+    }
+
+    suspend fun clearUserRole() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(IS_WANDERER)
         }
     }
 }

@@ -57,10 +57,10 @@ fun AppNavHost(viewModel: MyViewModel) {
             }
             WelcomeScreen(
                 state = state,
-                onLogin = {email, password ->
-                    viewModel.onEvent(AuthEvent.SignIn(email, password))},
-                onSignUp = { email, password ->
-                    viewModel.onEvent(AuthEvent.SignUp(email, password))
+                onLogin = {email, password ,isWanderer ->
+                    viewModel.onEvent(AuthEvent.SignIn(email, password,isWanderer))},
+                onSignUp = { email, password ,isWanderer->
+                    viewModel.onEvent(AuthEvent.SignUp(email, password,isWanderer))
                 },
                 googleAuthClient = googleAuthClient,
                 viewModel = viewModel,
