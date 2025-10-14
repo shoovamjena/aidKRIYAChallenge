@@ -90,8 +90,8 @@ class MyViewModel (
     fun onEvent(event: AuthEvent) {
         when (event) {
             is AuthEvent.SignUp -> signUp(event.email, event.password,event.isWanderer)
-            is AuthEvent.SignIn -> signIn(event.email, event.password,event.isWanderer)
-            is AuthEvent.Google -> google(event.idToken,event.isWanderer)
+            is AuthEvent.SignIn -> signIn(event.email, event.password)
+            is AuthEvent.Google -> google(event.idToken)
             is AuthEvent.ForgotPassword -> forgotPassword(event.email)
             AuthEvent.ClearError -> _state.value = _state.value.copy(error = null)
         }
@@ -116,13 +116,13 @@ class MyViewModel (
     }
 
 
-    private fun signIn(email: String, password: String,isWanderer: Boolean) = viewModelScope.launch {
+    private fun signIn(email: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.signIn(email, password,isWanderer)) {
+        when (val res = repo.signIn(email, password)) {
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, error = null, isLoading = false)
-                cacheUser(email, uid = res.data.uid,isWanderer)
+                cacheUser(email, uid = res.data.uid, isWanderer = res.data.isWanderer)
             }
 
             is ResultState.Error -> _state.value =
@@ -133,9 +133,9 @@ class MyViewModel (
     }
 
 
-    private fun google(idToken: String,isWanderer: Boolean) = viewModelScope.launch {
+    private fun google(idToken: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
-        when (val res = repo.signInWithGoogle(idToken,isWanderer)) {
+        when (val res = repo.signInWithGoogle(idToken)) {
             is ResultState.Success -> {
                 Log.d("MyViewModel", "Google sign-in success: ${res.data}")
                 _state.value = LoginUiState(user = res.data, isLoading = false, error = null)
@@ -248,8 +248,8 @@ class MyViewModel (
 
 sealed class AuthEvent {
     data class SignUp(val email: String, val password: String,val isWanderer: Boolean) : AuthEvent()
-    data class SignIn(val email: String, val password: String,val isWanderer: Boolean) : AuthEvent()
-    data class Google(val idToken: String,val isWanderer: Boolean) : AuthEvent()
+    data class SignIn(val email: String, val password: String) : AuthEvent()
+    data class Google(val idToken: String) : AuthEvent()
     data object ClearError : AuthEvent()
     data class ForgotPassword(val email: String) : AuthEvent()
 }
