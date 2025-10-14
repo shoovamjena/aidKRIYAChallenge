@@ -366,7 +366,7 @@ fun SignUpContent(
                             val idToken = googleAuthClient.getGoogleIdToken()
                             if (idToken != null) {
                                 Log.d("GoogleAuthUI", "Got ID Token: $idToken")
-                                viewModel.onEvent(AuthEvent.Google(idToken,if(selectedRole == WANDERER_PATH) true else false))
+                                viewModel.onEvent(AuthEvent.Google(idToken))
                             } else {
                                 Log.e("GoogleAuthUI", "Google Sign-in returned null token")
                                 Toast.makeText(context, "Google Sign-in failed", Toast.LENGTH_SHORT).show()
@@ -680,7 +680,7 @@ fun SignUpContent(
                             val idToken = googleAuthClient.getGoogleIdToken()
                             if (idToken != null) {
                                 Log.d("GoogleAuthUI", "Got ID Token: $idToken")
-                                viewModel.onEvent(AuthEvent.Google(idToken,if(selectedRole == WANDERER_PATH) true else false))
+                                viewModel.onEvent(AuthEvent.Google(idToken))
                             } else {
                                 Log.e("GoogleAuthUI", "Google Sign-in returned null token")
                                 Toast.makeText(context, "Google Sign-in failed", Toast.LENGTH_SHORT).show()

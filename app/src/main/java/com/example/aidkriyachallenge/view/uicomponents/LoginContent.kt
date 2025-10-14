@@ -38,11 +38,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,10 +111,8 @@ fun LoginContent(
     widthSize: WindowWidthSizeClass,
     viewModel: MyViewModel,
     googleAuthClient: GoogleAuthClient,
-    isDark : Boolean,
-    onForgotPassword: (String) -> Unit,
-    role: Boolean,
-    onRoleChanged:(Boolean) -> Unit
+    isDark: Boolean,
+    onForgotPassword: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -135,8 +129,6 @@ fun LoginContent(
      var resetEmail by remember { mutableStateOf("") }
      var isError by remember { mutableStateOf(false) }
 
-    var expanded by remember { mutableStateOf(false) }
-    var selectedRole by remember { mutableStateOf("Walker") }
 
     // Animated drag offset with bounce-back
     val animatedDragOffset by animateFloatAsState(
@@ -338,41 +330,6 @@ fun LoginContent(
                         }
                     }
                 )
-                OutlinedTextField(
-                    value = if(role) "Wanderer" else "Walker",
-                    onValueChange = {},
-                    label = { Text("Role") },
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.ArrowDropDown, contentDescription = null,
-                            Modifier.clickable { expanded = !expanded })
-                    },
-                    modifier = Modifier.fillMaxWidth().height(80.dp)
-                        .padding(horizontal = 10.dp),
-                )
-
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Walker") },
-                        onClick = {
-                            selectedRole = "Walker"
-                            onRoleChanged(false)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Wanderer") },
-                        onClick = {
-                            selectedRole = "Wanderer"
-                            onRoleChanged(true)
-                            expanded = false
-                        }
-                    )
-                }
 
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp),
@@ -404,7 +361,8 @@ fun LoginContent(
                             val idToken = googleAuthClient.getGoogleIdToken()
                             if (idToken != null) {
                                 Log.d("GoogleAuthUI", "Got ID Token: $idToken")
-                                viewModel.onEvent(AuthEvent.Google(idToken,if(selectedRole == WANDERER_PATH) true else false))
+                                viewModel.onEvent(AuthEvent.Google(idToken,
+                                ))
                             } else {
                                 Log.e("GoogleAuthUI", "Google Sign-in returned null token")
                                 Toast.makeText(context, "Google Sign-in failed", Toast.LENGTH_SHORT).show()
@@ -632,41 +590,6 @@ fun LoginContent(
                         }
                     }
                 )
-                OutlinedTextField(
-                    value = if(role) "Wanderer" else "Walker",
-                    onValueChange = {},
-                    label = { Text("Role") },
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.ArrowDropDown, contentDescription = null,
-                            Modifier.clickable { expanded = !expanded })
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                )
-
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Walker") },
-                        onClick = {
-                            selectedRole = "Walker"
-                            onRoleChanged(false)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Wanderer") },
-                        onClick = {
-                            selectedRole = "Wanderer"
-                            onRoleChanged(true)
-                            expanded = false
-                        }
-                    )
-                }
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -696,7 +619,8 @@ fun LoginContent(
                             val idToken = googleAuthClient.getGoogleIdToken()
                             if (idToken != null) {
                                 Log.d("GoogleAuthUI", "Got ID Token: $idToken")
-                                viewModel.onEvent(AuthEvent.Google(idToken,if(selectedRole == WANDERER_PATH) true else false))
+                                viewModel.onEvent(AuthEvent.Google(idToken,
+                                ))
                             } else {
                                 Log.e("GoogleAuthUI", "Google Sign-in returned null token")
                                 Toast.makeText(context, "Google Sign-in failed", Toast.LENGTH_SHORT).show()

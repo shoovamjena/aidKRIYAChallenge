@@ -97,7 +97,7 @@ fun WelcomeScreen(
     viewModel: MyViewModel,
     googleAuthClient: GoogleAuthClient,
     state: LoginUiState,
-    onLogin: (String, String, Boolean) -> Unit,
+    onLogin: (String, String) -> Unit,
     onSignUp: (String, String, Boolean) -> Unit,
     onForgotPassword: (String) -> Unit,
 ){
@@ -123,8 +123,8 @@ fun WelcomeScreen(
 
     val sizeAnimation by animateDpAsState(
         targetValue = when {
-            ( widthSize == WindowWidthSizeClass.Expanded || heightSize == WindowHeightSizeClass.Expanded) -> 250.dp
-            else -> if (visible) 100.dp else 250.dp
+            ( widthSize == WindowWidthSizeClass.Expanded || heightSize == WindowHeightSizeClass.Expanded) -> if (visible) 100.dp else 250.dp
+            else -> if (visible) 200.dp else 350.dp
         },
         animationSpec = tween(durationMillis = 500),
         label = "sizeAnimation"
@@ -332,21 +332,18 @@ fun WelcomeScreen(
                             item {
                                 when (selectedScreen) {
                                     SelectedScreen.Login -> LoginContent(
-                                        onLogin = { onLogin(loginEmail.trim(),loginPassword.trim(),isWanderer) },
+                                        state = state,
+                                        onLogin = { onLogin(loginEmail.trim(),loginPassword.trim()) },
                                         email = loginEmail,
                                         onEmailChanged = { loginEmail = it},
                                         password = loginPassword,
                                         onPasswordChanged = { loginPassword = it},
                                         heightSize = heightSize,
                                         widthSize = widthSize,
-                                        state = state,
                                         viewModel = viewModel,
                                         googleAuthClient = googleAuthClient,
                                         isDark = isDark,
-                                        onForgotPassword = onForgotPassword,
-                                        role = isWanderer,
-                                        onRoleChanged = {role->
-                                            isWanderer = role}
+                                        onForgotPassword = onForgotPassword
                                     )
                                     SelectedScreen.SignUp -> SignUpContent(
                                         onLogin = {selectedScreen = SelectedScreen.Login},
@@ -427,21 +424,18 @@ fun WelcomeScreen(
                                 item {
                                     when (selectedScreen) {
                                         SelectedScreen.Login -> LoginContent(
-                                            onLogin = { onLogin(loginEmail.trim(),loginPassword.trim(),isWanderer)},
+                                            state = state,
+                                            onLogin = { onLogin(loginEmail.trim(),loginPassword.trim())},
                                             email = loginEmail,
                                             onEmailChanged = { loginEmail = it},
                                             password = loginPassword,
                                             onPasswordChanged = { loginPassword = it},
                                             heightSize = heightSize,
                                             widthSize = widthSize,
-                                            state = state,
                                             viewModel = viewModel,
                                             googleAuthClient = googleAuthClient,
                                             isDark = isDark,
-                                            onForgotPassword = onForgotPassword,
-                                            role = isWanderer,
-                                            onRoleChanged = {role->
-                                                isWanderer = role}
+                                            onForgotPassword = onForgotPassword
                                         )
                                         SelectedScreen.SignUp -> SignUpContent(
                                             onLogin = {selectedScreen = SelectedScreen.Login},
@@ -496,7 +490,7 @@ fun LoginSignUpToggle(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 40.dp)
-            .padding(top = 20.dp)
+            .padding(top = 40.dp)
             .height(if (largeScreen) 80.dp else 50.dp)
             .shadow(5.dp, shape = RoundedCornerShape(50))
             .clip(RoundedCornerShape(50))

@@ -57,8 +57,8 @@ fun AppNavHost(viewModel: MyViewModel) {
             }
             WelcomeScreen(
                 state = state,
-                onLogin = {email, password ,isWanderer ->
-                    viewModel.onEvent(AuthEvent.SignIn(email, password,isWanderer))},
+                onLogin = { email, password ->
+                    viewModel.onEvent(AuthEvent.SignIn(email, password))},
                 onSignUp = { email, password ,isWanderer->
                     viewModel.onEvent(AuthEvent.SignUp(email, password,isWanderer))
                 },
