@@ -89,7 +89,7 @@ fun ProfileScreen(viewModel: MyViewModel) {
         OutlinedTextField(
             value = if(isWanderer == true) "Wanderer" else "Walker",
             onValueChange = {},
-            label = { Text("Address") },
+            label = { Text("Role") },
             modifier = Modifier.fillMaxWidth(),
             readOnly = true
         )

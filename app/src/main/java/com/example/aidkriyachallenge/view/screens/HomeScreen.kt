@@ -42,6 +42,24 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(5.dp))
             Button(
                 onClick = {
+                    navController.navigate("ReviewSubmit")
+                },
+                modifier = Modifier.align(Alignment.TopCenter).padding(bottom = 40.dp)
+            ) {
+                Text("ReviewSubmit")
+            }
+            Spacer(modifier = Modifier.height(5.dp))
+            Button(
+                onClick = {
+                    navController.navigate("ReviewSeen")
+                },
+                modifier = Modifier.align(Alignment.Center).padding(bottom = 30.dp)
+            ) {
+                Text("ReviewSeen")
+            }
+            Spacer(modifier = Modifier.height(5.dp))
+            Button(
+                onClick = {
                     navController.navigate("profileSk")
                 },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 20.dp)
