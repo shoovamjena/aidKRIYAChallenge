@@ -39,8 +39,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
-//import androidx.compose.material.icons.Icons
-//import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -306,7 +306,7 @@ fun SignUpContent(
                     readOnly = true,
                     trailingIcon = {
                         Icon(
-                            Icons.Default.ArrowDropDown, contentDescription = null,
+                            imageVector = Icons.Default.ArrowDropDown, contentDescription = null,
                             Modifier.clickable { expanded = !expanded })
                     },
                     modifier = Modifier.fillMaxWidth().height(80.dp)
