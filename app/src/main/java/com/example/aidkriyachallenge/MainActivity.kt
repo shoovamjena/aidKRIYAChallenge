@@ -14,7 +14,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.navControl.AppNavHost
 import com.example.aidkriyachallenge.repo.Repo
+import com.example.aidkriyachallenge.repo.ReviewRepo
 import com.example.aidkriyachallenge.ui.theme.AidKRIYAChallengeTheme
+import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -30,7 +32,9 @@ class MainActivity : ComponentActivity() {
         val storage = FirebaseStorage.getInstance()
         val firestore = FirebaseFirestore.getInstance()
         val repo = Repo(firestore, auth)
+        val reviewRepo = ReviewRepo(firestore = firestore)
         val userPref = UserPreferences(this)
+        val reviewViewModel = ReviewViewModel(reviewRepo = reviewRepo)
         val viewModel = MyViewModel(
             repo = repo,
             userPref = userPref,
@@ -41,7 +45,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AidKRIYAChallengeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    AppNavHost(viewModel)
+                    AppNavHost(viewModel, reviewViewModel = reviewViewModel)
                 }
             }
         }

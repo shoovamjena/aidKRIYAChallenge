@@ -89,7 +89,6 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.airbnb.lottie.compose.rememberLottieDynamicProperties
 import com.airbnb.lottie.compose.rememberLottieDynamicProperty
 import com.example.aidkriyachallenge.R
-import com.example.aidkriyachallenge.common.WANDERER_PATH
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.ui.theme.odin

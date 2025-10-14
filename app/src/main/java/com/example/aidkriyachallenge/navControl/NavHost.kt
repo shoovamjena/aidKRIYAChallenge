@@ -12,19 +12,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.aidkriyachallenge.dummyUi.ProfileScreen
+import com.example.aidkriyachallenge.dummyui.ReviewScreen
+import com.example.aidkriyachallenge.dummyui.ReviewSubmitScreen
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.view.screens.HomeScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
+import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.example.aidkriyachallenge.viewmodel.AuthEvent
 import com.example.aidkriyachallenge.viewmodel.MyViewModel
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun AppNavHost(viewModel: MyViewModel) {
+fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val navController = rememberNavController()
+    val userid by viewModel.userId.collectAsState()
+    val userrole by viewModel.userRole.collectAsState()
     val userEmail by viewModel.userEmail.collectAsState()
     val googleAuthClient = remember { GoogleAuthClient(context) }
 
@@ -76,5 +81,21 @@ fun AppNavHost(viewModel: MyViewModel) {
         composable(route = "profileSk"){
             ProfileScreen(viewModel)
         }
+
+        composable("ReviewSubmit") {
+            ReviewSubmitScreen(
+                walkid = "Walk123",
+                isWanderer = userrole!!,
+                userid = userid!!,
+                reviewingId = "6EbQZHz17IUchzgmD9JbCP0fcit2",
+                viewModel = reviewViewModel
+            )
+        }
+        composable("ReviewSeen") {
+
+            ReviewScreen(userId = userid!!, isWanderer = userrole!!, viewModel = reviewViewModel)
+
+        }
+
     }
 }
