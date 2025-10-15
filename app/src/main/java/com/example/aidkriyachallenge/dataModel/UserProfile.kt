@@ -11,7 +11,7 @@ data class UserProfile(
     val dob: Long? = null, // store DOB in millis
     val gender: String = "",
     val address: String = "",
-    val isWanderer: Boolean=true , // Wanderer or Walker
+    val isWanderer: Boolean? = null, // Wanderer or Walker
     val walkingSpeed: String = "",
     val description: String = "",
     val imageUrl: String = ""

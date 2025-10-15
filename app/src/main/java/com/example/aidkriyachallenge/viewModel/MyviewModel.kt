@@ -122,7 +122,8 @@ class MyViewModel (
             is ResultState.Success -> {
                 _state.value =
                     LoginUiState(user = res.data, error = null, isLoading = false)
-                cacheUser(email, uid = res.data.uid, isWanderer = res.data.isWanderer)
+                Log.d("viewModelRole","${res.data.isWanderer}")
+                cacheUser(email, uid = res.data.uid, isWanderer = res.data.isWanderer == true)
             }
 
             is ResultState.Error -> _state.value =
@@ -139,7 +140,7 @@ class MyViewModel (
             is ResultState.Success -> {
                 Log.d("MyViewModel", "Google sign-in success: ${res.data}")
                 _state.value = LoginUiState(user = res.data, isLoading = false, error = null)
-                res.data.let { cacheUser(it.email, uid = it.uid, isWanderer = it.isWanderer) }
+                res.data.let { cacheUser(it.email, uid = it.uid, isWanderer = it.isWanderer == true) }
             }
 
             is ResultState.Error -> {
@@ -173,7 +174,7 @@ class MyViewModel (
     fun onDobChanged(value: Long) { _Profilestate.update { it.copy(dob = value) } }
     fun onGenderChanged(value: String) { _Profilestate.update { it.copy(gender = value) } }
     fun onAddressChanged(value: String) { _Profilestate.update { it.copy(address = value) } }
-    fun onRoleChanged(value: Boolean) { _Profilestate.update { it.copy(isWanderer = value) } }
+
     fun onWalkingSpeedChanged(value: String) { _Profilestate.update { it.copy(walkingSpeed = value) } }
     fun onDescriptionChanged(value: String) { _Profilestate.update { it.copy(description = value) } }
     fun onImageChanged(value: Uri?) { _Profilestate.update { it.copy(imageUri = value) } }
@@ -181,6 +182,7 @@ class MyViewModel (
     fun saveProfile() = viewModelScope.launch {
         val uid = userId.firstOrNull() ?: return@launch
         val email = userEmail.firstOrNull() ?: ""
+        val role = userRole.firstOrNull()?:return@launch
 
         var imageUrl = ""
 
@@ -192,10 +194,10 @@ class MyViewModel (
             dob = Profilestate.value.dob,
             gender = Profilestate.value.gender,
             address = Profilestate.value.address,
-            isWanderer = Profilestate.value.isWanderer,
             walkingSpeed = Profilestate.value.walkingSpeed,
             description = Profilestate.value.description,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            isWanderer = role
         )
 
         when (val result = repo.saveUserProfile(profile)) {
@@ -225,7 +227,6 @@ class MyViewModel (
                             dob = profile.dob,
                             gender = profile.gender,
                             address = profile.address,
-                            isWanderer = profile.isWanderer,
                             walkingSpeed = profile.walkingSpeed,
                             description = profile.description,
                             imageUri = profile.imageUrl.toUri()
@@ -265,7 +266,6 @@ data class ProfileState(
     val dob: Long? = null,
     val gender: String = "",
     val address: String = "",
-    val isWanderer: Boolean = true,
     val walkingSpeed: String = "",
     val description: String = "",
     val imageUri: Uri? = null

@@ -1,6 +1,7 @@
 package com.example.aidkriyachallenge.dummyUi
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -86,6 +87,7 @@ fun ProfileScreen(viewModel: MyViewModel) {
             modifier = Modifier.fillMaxWidth(),
             readOnly = !isEditing
         )
+        Log.d("ProfileScreen","$isWanderer")
         OutlinedTextField(
             value = if(isWanderer == true) "Wanderer" else "Walker",
             onValueChange = {},

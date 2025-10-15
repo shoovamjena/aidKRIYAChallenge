@@ -128,9 +128,9 @@ class Repo(
     }
 
     suspend fun saveUserProfile(profile: UserProfile): ResultState<String> = try {
-        if(profile.isWanderer){
+        if(profile.isWanderer == true){
             wanderer.document(profile.uid).set(profile).await()
-        }else{
+        }else if(profile.isWanderer == false){
             walker.document(profile.uid).set(profile).await()
         }
 
