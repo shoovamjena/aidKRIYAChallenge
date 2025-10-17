@@ -11,14 +11,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.aidkriyachallenge.dummyUi.ProfileScreen
-import com.example.aidkriyachallenge.dummyui.ReviewScreen
-import com.example.aidkriyachallenge.dummyui.ReviewSubmitScreen
+import com.example.aidkriyachallenge.view.screens.ProfileScreen
+import com.example.aidkriyachallenge.dummyUi.ReviewScreen
+import com.example.aidkriyachallenge.dummyUi.ReviewSubmitScreen
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.view.screens.HomeScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
-import com.example.aidkriyachallenge.viewModel.ReviewViewModel
+import com.example.aidkriyachallenge.viewmodel.ReviewViewModel
 import com.example.aidkriyachallenge.viewmodel.AuthEvent
 import com.example.aidkriyachallenge.viewmodel.MyViewModel
 
@@ -79,7 +79,7 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel) {
         }
 
         composable(route = "profileSk"){
-            ProfileScreen(viewModel)
+            ProfileScreen(viewModel,navController)
         }
 
         composable("ReviewSubmit") {

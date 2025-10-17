@@ -192,7 +192,7 @@ fun WelcomeScreen(
                         arrayOf(
                             0.15f to MaterialTheme.colorScheme.primaryContainer.copy(0.7f),
                             0.3f to MaterialTheme.colorScheme.primaryContainer.copy(0.5f),
-                            0.5f to MaterialTheme.colorScheme.surfaceBright.copy(0.5f)
+                            0.5f to MaterialTheme.colorScheme.surfaceDim.copy(0.5f)
                         )
                     }
                 )
