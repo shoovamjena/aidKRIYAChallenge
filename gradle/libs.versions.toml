@@ -22,6 +22,7 @@ material3WindowSizeClass = "1.3.2"
 material3WindowSizeClassVersion = "1.5.0-alpha03"
 androidxMaterial3WindowSizeClass = "1.3.2"
 material3Expressive = "1.5.0-alpha06"
+firebaseDatabase = "22.0.1"
 
 [libraries]
 androidx-material3-window-size-class1-v150alpha02 = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClassVersion" }
@@ -52,6 +53,7 @@ firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
