@@ -19,6 +19,7 @@ materialIconsExtended = "1.7.8" # Example, use your actual version
 adaptive = "1.0.0"
 material3WindowSizeClass = "1.3.2" # Example, use your actual version
 material3Expressive = "1.5.0-alpha06"
+firebaseDatabase = "22.0.1"
 
 # Firebase (BOM version managed in build.gradle.kts)
 
@@ -83,6 +84,7 @@ firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 
 # Google Maps & Location
 google-playServices-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "googlePlayServicesMaps" }
