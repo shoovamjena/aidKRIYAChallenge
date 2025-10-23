@@ -37,7 +37,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
+//import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -383,7 +383,7 @@ fun LoginContent(
                     BasicText(
                         "Forgot Password",
                         maxLines = 1,
-                        autoSize = TextAutoSize.StepBased(maxFontSize = 20.sp),
+                        //autoSize = TextAutoSize.StepBased(maxFontSize = 20.sp),
                         style = TextStyle(
                             fontFamily = odin,
                             color = MaterialTheme.colorScheme.primary.copy(0.7f)
@@ -505,9 +505,9 @@ fun LoginContent(
                             BasicText(
                                 text = if(isError)"LOGIN FAILED" else " LOGGING YOU IN",
                                 maxLines = 1,
-                                autoSize =TextAutoSize.StepBased(
-                                    maxFontSize = 34.sp
-                                ),
+                                //autoSize =TextAutoSize.StepBased(
+//                                    maxFontSize = 34.sp
+//                                ),
                                 style = TextStyle(
                                     fontFamily = fredoka,
                                     color = if(isError)MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
@@ -641,7 +641,7 @@ fun LoginContent(
                     BasicText(
                         "Forgot Password",
                         maxLines = 1,
-                        autoSize = TextAutoSize.StepBased(maxFontSize = 18.sp),
+                        //autoSize = TextAutoSize.StepBased(maxFontSize = 18.sp),
                         style = TextStyle(
                             fontFamily = odin,
                             color = MaterialTheme.colorScheme.primary.copy(0.7f)
@@ -763,9 +763,9 @@ fun LoginContent(
                             BasicText(
                                 text = if(isError) "LOGIN FAILED" else "LOGGING YOU IN",
                                 maxLines = 1,
-                                autoSize =TextAutoSize.StepBased(
-                                    maxFontSize = 24.sp
-                                ),
+//                                autoSize =TextAutoSize.StepBased(
+//                                    maxFontSize = 24.sp
+//                                ),
                                 style = TextStyle(
                                     fontFamily = fredoka,
                                     fontSize = 24.sp,
