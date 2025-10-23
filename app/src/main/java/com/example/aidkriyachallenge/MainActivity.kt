@@ -6,6 +6,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -16,6 +17,10 @@ import com.example.aidkriyachallenge.navControl.AppNavHost
 import com.example.aidkriyachallenge.repo.Repo
 import com.example.aidkriyachallenge.repo.ReviewRepo
 import com.example.aidkriyachallenge.ui.theme.AidKRIYAChallengeTheme
+import com.example.aidkriyachallenge.viewModel.MainViewModel
+import com.example.aidkriyachallenge.viewModel.MainViewModelFactory
+import com.example.aidkriyachallenge.viewModel.ReviewViewModel
+
 import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -23,7 +28,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 
 class MainActivity : ComponentActivity() {
+    private val mapRoutingViewModel: MainViewModel by viewModels {
+        MainViewModelFactory(this.applicationContext)
+    }
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -45,7 +54,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AidKRIYAChallengeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { _ ->
-                    AppNavHost(viewModel, reviewViewModel = reviewViewModel)
+                    AppNavHost(viewModel, reviewViewModel = reviewViewModel,mapRoutingViewModel=mapRoutingViewModel)
                 }
             }
         }

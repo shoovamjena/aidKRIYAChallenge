@@ -1,63 +1,119 @@
 [versions]
-adaptive = "1.1.0"
-adaptiveVersion = "1.0.0"
+# Android & Kotlin
 agp = "8.12.2"
 kotlin = "2.0.21"
-coreKtx = "1.17.0"
-junit = "4.13.2"
-junitVersion = "1.3.0"
-espressoCore = "3.7.0"
+coreKtx = "1.17.0" # Example, use your actual version from build.gradle.kts if different
 lifecycleRuntimeKtx = "2.9.3"
 activityCompose = "1.10.1"
+activityKtx = "1.9.0"
+lifecycleRuntimeCompose = "2.8.3" # Added
+androidxWindow = "1.4.0"
+androidxSplashscreen = "1.0.1"
+androidxDatastorePrefs = "1.1.7" # Check if 1.1.1 is intended
+androidxNavigationCompose = "2.7.7"
+
+# Compose
+firebaseBom = "33.1.1"
 composeBom = "2024.09.00"
-googleGmsGoogleServices = "4.4.3"
-firebaseFirestore = "26.0.0"
-firebaseStorage = "22.0.0"
-firebaseAuth = "24.0.1"
-credentials = "1.5.0"
-credentialsPlayServicesAuth = "1.5.0"
-googleid = "1.1.1"
-material3Adaptive = "1.0.0-alpha06"
-material3WindowSizeClass = "1.3.2"
-material3WindowSizeClassVersion = "1.5.0-alpha03"
-androidxMaterial3WindowSizeClass = "1.3.2"
+materialIconsExtended = "1.7.8" # Example, use your actual version
+adaptive = "1.0.0"
+material3WindowSizeClass = "1.3.2" # Example, use your actual version
 material3Expressive = "1.5.0-alpha06"
 firebaseDatabase = "22.0.1"
 
+# Firebase (BOM version managed in build.gradle.kts)
+
+googleGmsGoogleServices = "4.4.3"
+
+# Google Services & Maps
+googlePlayServicesMaps = "18.2.0"
+googlePlayServicesLocation = "21.3.0"
+googleMapsCompose = "4.4.1"
+googlePlaces = "3.5.0"
+googleMapsUtils = "2.3.0"
+credentials = "1.5.0" # Example, use your actual version
+googleid = "1.1.1"
+
+# Networking & Serialization
+retrofit = "2.9.0"
+kotlinxSerializationJson = "1.7.1" # Example, use your actual version
+
+# UI Utilities
+airbnbLottieCompose = "4.0.0"
+
+# Testing
+junit = "4.13.2"
+androidxJunit = "1.3.0" # Renamed from junitVersion for clarity
+androidxEspressoCore = "3.7.0" # Renamed from espressoCore
+
 [libraries]
-androidx-material3-window-size-class1-v150alpha02 = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClassVersion" }
-androidx-material3-adaptive = { module = "androidx.compose.material3:material3-adaptive", version.ref = "material3Adaptive" }
-androidx-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
-androidx-adaptive-v100 = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptiveVersion" }
-androidx-material3-window-size-class1-v110 = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "androidxMaterial3WindowSizeClass" }
+# AndroidX Core & Lifecycle
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-material3-window-size-class1 = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
-google-firebase-auth = { module = "com.google.firebase:firebase-auth" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-activityKtx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" } # Added
+
+# Compose (Core versions managed by BOM)
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-compose-material3-windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
+androidx-compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 androidx-material3-expressive = {group = "androidx.compose.material3", name = "material3-expressive", version.ref = "material3Expressive"}
-firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
-firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidxNavigationCompose" }
+# Window Manager & Splashscreen
+androidx-window = { group = "androidx.window", name = "window", version.ref = "androidxWindow" }
+androidx-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxSplashscreen" }
+
+# DataStore
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidxDatastorePrefs" }
+
+# Firebase (Versions managed by BOM in build.gradle.kts)
+firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" } # Consistent naming
+firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx" } # Consistent naming
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" } # Consistent naming
+firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx" } # Consistent naming
+
+# Credentials & Google ID
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
-androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
+
+# Google Maps & Location
+google-playServices-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "googlePlayServicesMaps" }
+google-playServices-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "googlePlayServicesLocation" }
+google-maps-compose = { group = "com.google.maps.android", name = "maps-compose", version.ref = "googleMapsCompose" }
+google-places = { group = "com.google.android.libraries.places", name = "places", version.ref = "googlePlaces" }
+google-maps-utils = { group = "com.google.maps.android", name = "android-maps-utils", version.ref = "googleMapsUtils" }
+
+# Retrofit
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converterGson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+
+# Lottie
+airbnb-lottieCompose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "airbnbLottieCompose" } # Added
+
+# Kotlinx Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" } # Added
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxEspressoCore" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" } # Version from Compose BOM
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" } # Version from Compose BOM
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
-
+#[bundles]
+# You can optionally define bundles here if you wish

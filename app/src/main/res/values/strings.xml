@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">aidKRIYAChallenge</string>
     <string name="default_web_client_id">454059164837-co8cp8v4m3nl984gt3384s6f2qr1g85m.apps.googleusercontent.com</string>
+    <string name="google_maps_key">AIzaSyDik0CcgFsxtSCyGacvdKQpnzpaBGJxktk</string>
 </resources>
