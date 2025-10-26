@@ -1,6 +1,7 @@
 package com.example.aidkriyachallenge.repo
 
 
+import android.util.Log
 import com.example.aidkriyachallenge.dataModel.Request
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -31,7 +32,13 @@ class RealtimeRepo(
         db.child("users").child(currentUserId).setValue(user)
     }
 
-    fun raiseCall(lat: Double, lng: Double,destLat: Double,destLng: Double, onSuccess: (requestId: String) -> Unit) {
+    fun raiseCall(
+        lat: Double,
+        lng: Double,
+        destLat: Double,
+        destLng: Double,
+        onSuccess: (requestId: String) -> Unit
+    ) {
         val requestRef = db.child("requests").push()
         val requestId = requestRef.key ?: return
 
@@ -40,14 +47,21 @@ class RealtimeRepo(
             "companionId" to null,
             "status" to "pending",
             "createdAt" to ServerValue.TIMESTAMP,
-            "lat" to lat, // <-- ADD THIS
-            "lng" to lng, // <-- AND THI
-            "destLat" to destLat, // <-- ADD THIS
+            "lat" to lat,
+            "lng" to lng,
+            "destLat" to destLat,
             "destLng" to destLng
-
         )
+
         requestRef.setValue(request)
-            .addOnSuccessListener { onSuccess(requestId) }
+            .addOnSuccessListener {
+                // --- THIS IS THE NEW LOGIC ---
+                // Set the "last will": if the app disconnects, remove this request
+                requestRef.onDisconnect().removeValue()
+                // --- END OF NEW LOGIC ---
+
+                onSuccess(requestId)
+            }
     }
 
     fun acceptCall(requestId: String, lat: Double, lng: Double, onComplete: () -> Unit) {
@@ -71,25 +85,49 @@ class RealtimeRepo(
     }
 
     // This function acts as the "confirm" action from the Walker
-    fun createSession(requestId: String, companionId: String, onSuccess: (String) -> Unit) {
+    fun createSession(
+        requestId: String, // We need this to cancel the onDisconnect
+        companionId: String,
+        onComplete: () -> Unit
+    ) {
+        // --- THIS IS THE MISSING LOGIC ---
         val sessionRef = db.child("sessions").push()
-        val sessionId = sessionRef.key ?: return
+        val sessionId = sessionRef.key
+        if (sessionId == null) {
+            Log.e("RealtimeRepo", "Failed to get push key for new session.")
+            return
+        }
 
         val session = mapOf(
             "walkerId" to currentUserId,
             "companionId" to companionId,
-            "status" to "active",
+            "status" to "active", // The session starts as "active"
             "startedAt" to ServerValue.TIMESTAMP
         )
+        // --- END OF MISSING LOGIC ---
 
         sessionRef.setValue(session)
             .addOnSuccessListener {
-                db.child("requests").child(requestId)
-                    .updateChildren(mapOf("status" to "linked", "sessionId" to sessionId))
-                onSuccess(sessionId)
+                Log.d("RealtimeRepo", "Session node created ($sessionId). Updating request...")
+
+                // We have a successful match, so cancel the "last will"
+                val requestRef = db.child("requests").child(requestId)
+                requestRef.onDisconnect().cancel() // Cancel the onDisconnect
+
+                // Use the 'sessionId' variable we created
+                requestRef.updateChildren(mapOf("status" to "linked", "sessionId" to sessionId))
+                    .addOnSuccessListener {
+                        Log.d("RealtimeRepo", "Request node updated. Calling onComplete callback.")
+                        onComplete()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("RealtimeRepo", "Failed to update request node: ${e.message}")
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("RealtimeRepo", "Failed to create session node: ${e.message}")
             }
     }
-
     // --- Location Functions ---
 
     fun updateLocation(sessionId: String, lat: Double, lng: Double) {
@@ -158,16 +196,26 @@ class RealtimeRepo(
         db.child("sessions").child(sessionId).child("locations").removeEventListener(listener)
     }
 
-    fun endSession(sessionId: String, walkerId: String, companionId: String, onComplete: () -> Unit) {
+    fun endSession(
+        sessionId: String,
+        requestId: String, // <-- ADD THIS
+        walkerId: String,
+        companionId: String,
+        onComplete: () -> Unit
+    ) {
         val updates = mapOf<String, Any?>(
             // Reset the walker's status
             "/users/$walkerId/status" to "idle",
             // Reset the companion's status
             "/users/$companionId/status" to "idle",
-            // Delete the entire session node by setting it to null
-            "/sessions/$sessionId" to null
+            // Delete the entire session node
+            "/sessions/$sessionId" to null,
+            // --- NEW ---
+            // Delete the original request node
+            "/requests/$requestId" to null
         )
 
+        // This single call will delete both nodes and update both users
         db.updateChildren(updates).addOnSuccessListener { onComplete() }
     }
 

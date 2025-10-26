@@ -15,6 +15,8 @@ class UserPreferences(private val context: Context) {
     private val USER_ID = stringPreferencesKey("user_id")
 
     private val IS_WANDERER = booleanPreferencesKey("wanderer_or_walker")
+    private val SESSION_ID = stringPreferencesKey("session_id")
+    private val REQUEST_ID = stringPreferencesKey("request_id")
 
     suspend fun saveUserEmail(email: String) {
         context.dataStore.edit { prefs ->
@@ -68,6 +70,44 @@ class UserPreferences(private val context: Context) {
     suspend fun clearUserRole() {
         context.dataStore.edit { prefs ->
             prefs.remove(IS_WANDERER)
+        }
+    }
+
+    suspend fun saveSessionId(sessionId: String) {
+        context.dataStore.edit { prefs ->
+            prefs[SESSION_ID] = sessionId
+        }
+    }
+
+    fun getSessionId(): Flow<String?> {
+        return context.dataStore.data.map { prefs ->
+            prefs[SESSION_ID]
+        }
+    }
+
+    suspend fun clearSessionId() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(SESSION_ID)
+        }
+    }
+
+    suspend fun saveSessionInfo(sessionId: String, requestId: String) {
+        context.dataStore.edit { prefs ->
+            prefs[SESSION_ID] = sessionId
+            prefs[REQUEST_ID] = requestId
+        }
+    }
+
+    fun getSessionInfo(): Flow<Pair<String?, String?>> {
+        return context.dataStore.data.map { prefs ->
+            Pair(prefs[SESSION_ID], prefs[REQUEST_ID])
+        }
+    }
+
+    suspend fun clearSessionInfo() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(SESSION_ID)
+            prefs.remove(REQUEST_ID)
         }
     }
 }

@@ -1,18 +1,21 @@
 package com.example.aidkriyachallenge.navControl
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.dataModel.Screen
 import com.example.aidkriyachallenge.dummyui.ReviewScreen
 import com.example.aidkriyachallenge.dummyui.ReviewSubmitScreen
@@ -35,6 +38,8 @@ import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.example.aidkriyachallenge.viewmodel.AuthEvent
 import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
@@ -49,6 +54,25 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
 
     val mapRoutingUserRole by mapRoutingViewModel.userRole.collectAsState()
 
+    // --- 1. COLLECT THE SESSION ID STATE ---
+    val sessionId by mapRoutingViewModel.sessionId.collectAsState()
+
+    // --- 2. ADD THE NAVIGATION TRIGGER ---
+    // This LaunchedEffect will run every time the 'sessionId' changes.
+    LaunchedEffect(sessionId) {
+        if (sessionId != null) {
+            // We got a new session ID, so navigate to the map!
+            Log.d("AppNavHost", "Session ID detected: $sessionId. Navigating to map...")
+            navController.navigate(Screen.Map.route) {
+                // Clear the back stack so the user can't go back
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            }
+        }
+    }
+
+    // A scope is needed to run DataStore checks in the onFinished lambda
+    val scope = rememberCoroutineScope()
+
     NavHost(
         navController = navController,
         startDestination = "splash",
@@ -56,15 +80,39 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
         composable("splash") {
             SplashScreen(
                 onFinished = {
-                    if (userEmail!= null) {
-                        navController.navigate("home") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate("welcome") {
-                            popUpTo(0) { inclusive = true }
+                    // --- THIS IS THE UPDATED SPLASH LOGIC ---
+                    scope.launch {
+                        if (userEmail != null) {
+                            // User is logged in. Check for an active session.
+                            val prefs = UserPreferences(context)
+                            // 1. Get the Pair explicitly to resolve the ambiguity
+                            val sessionInfo: Pair<String?, String?> = prefs.getSessionInfo().first()
+                            // 2. Assign variables from the pair
+                            val savedSessionId = sessionInfo.first
+                            val savedRequestId = sessionInfo.second
+
+                            if (savedSessionId != null && savedRequestId != null) {
+                                // SESSION FOUND!
+                                // 1. Tell the ViewModel to load this session
+                                mapRoutingViewModel.loadSession(savedSessionId, savedRequestId)
+                                // 2. Navigate directly to the Map Screen
+                                navController.navigate(Screen.Map.route) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            } else {
+                                // No session, go to home
+                                navController.navigate("home") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        } else {
+                            // No user email, go to welcome
+                            navController.navigate("welcome") {
+                                popUpTo(0) { inclusive = true }
+                            }
                         }
                     }
+                    // --- END OF UPDATED BLOCK ---
                 }
             )
         }
@@ -91,9 +139,11 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
             )
         }
         composable("home") {
-            HomeScreen(viewModel = viewModel,               // Pass the main MyViewModel
-                mapRoutingViewModel = mapRoutingViewModel, // Pass the MapRouting ViewModel
-                navController = navController)
+            HomeScreen(
+                viewModel = viewModel,
+                mapRoutingViewModel = mapRoutingViewModel,
+                navController = navController
+            )
         }
 
         composable(route = "profileSk"){
@@ -102,7 +152,7 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
 
         composable("ReviewSubmit") {
             ReviewSubmitScreen(
-                walkid = "Walk123",
+                walkid = "Walk1s3", // Corrected the walkid
                 isWanderer = userrole!!,
                 userid = userid!!,
                 reviewingId = "6EbQZHz17IUchzgmD9JbCP0fcit2",
@@ -114,19 +164,21 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
             ReviewScreen(userId = userid!!, isWanderer = userrole!!, viewModel = reviewViewModel)
 
         }
+
+        // --- MAP ROUTING SCREENS ---
+
         composable(
-            route = "tracking_request/{role}", // e.g., use Screen.TrackingRequest.route
+            route = Screen.TrackingRequest.route + "/{role}", // Use Screen object
             arguments = listOf(navArgument("role") { type = NavType.StringType })
         ) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "Walker"
             RequestScreen(
                 viewModel = mapRoutingViewModel,
                 role = role,
-                navController = navController // Pass NavController for destination selection
+                navController = navController
             )
         }
 
-        // 2. Destination Selection Screen
         composable(
             route = "${Screen.DestinationSelection.route}/{lat}/{lng}",
             arguments = listOf(
@@ -148,13 +200,11 @@ fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutin
             )
         }
 
-        // 3. Map Screen
         composable(Screen.Map.route) {
             MapScreen(
                 viewModel = mapRoutingViewModel,
-                navController = navController // Pass NavController for back navigation
+                navController = navController
             )
         }
     }
 }
-
