@@ -1,36 +1,32 @@
 package com.example.aidkriyachallenge.viewModel
 
+
 import android.content.Context
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aidkriyachallenge.R
-
+import com.example.aidkriyachallenge.common.UserPreferences
+import com.example.aidkriyachallenge.dataModel.Request
+import com.example.aidkriyachallenge.location.LocationClient
+import com.example.aidkriyachallenge.repo.RealtimeRepo
 import com.example.aidkriyachallenge.utils.PolylineDecoder
 import com.example.aidkriyachallenge.utils.RetrofitClient
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.Firebase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
-import android.location.Location // <-- Add this import
-import com.example.aidkriyachallenge.dataModel.Request
-import com.example.aidkriyachallenge.location.LocationClient
-import com.example.aidkriyachallenge.repo.RealtimeRepo
-import com.google.firebase.auth.auth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.firestore.firestore
 import com.google.maps.android.SphericalUtil
 import kotlinx.coroutines.Job
-
-
-
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class MainViewModel(
     private val context: Context
@@ -86,7 +82,9 @@ class MainViewModel(
     init {
         viewModelScope.launch {
             // 1. Get user ID from Firebase Auth
-            val userId = Firebase.auth.currentUser?.uid
+            val userPrefs = UserPreferences(context)
+            val userIdFlow: Flow<String?> = userPrefs.getUserid() // Use your function name
+            val userId: String? = userIdFlow.first() // Get the value once
             if (userId == null) {
                 Log.e("MainViewModel", "User not signed in.")
                 // Optionally emit an error state for the UI
@@ -94,8 +92,21 @@ class MainViewModel(
             }
             currentUserId = userId // Set the user ID for the class
 
-            // 2. Fetch the role from Firestore
-            val role = fetchUserRoleFromFirestore(userId)
+            // 2. Fetch the role from user preference
+
+
+            // 2. Call the function on the instance
+            val isWandererFlow: Flow<Boolean?> = userPrefs.getUserRole()
+
+            // Get the value from the Flow
+            val isWanderer: Boolean? = isWandererFlow.first()
+
+            // Map Boolean? to String? (using your mapping)
+            val role: String? = when (isWanderer) {
+                true -> "Walker"
+                false -> "Companion"
+                null -> null
+            }
             _userRole.value = role
 
             // 3. Create the RealtimeRepo instance
@@ -111,25 +122,9 @@ class MainViewModel(
         }
     }
 
-    /**
-     * Fetches the user's role ("Walker" or "Companion") from Firestore
-     * based on which collection their document exists in.
-     */
-    private suspend fun fetchUserRoleFromFirestore(userId: String): String? {
-        val db = Firebase.firestore
-        try {
-            if (db.collection("Walker").document(userId).get().await().exists()) {
-                return "Walker"
-            }
-            if (db.collection("Wanderer").document(userId).get().await().exists()) {
-                return "Companion" // Map Firestore "Wanderer" to our "Companion"
-            }
-            Log.w("MainViewModel", "User document not found in Walker or Wanderer collections.")
-        } catch (e: Exception) {
-            Log.e("MainViewModel", "Error fetching user role from Firestore: ${e.message}")
-        }
-        return null
-    }
+
+
+
 
     // --- Public Functions for the UI ---
 
@@ -182,8 +177,14 @@ class MainViewModel(
     }
 
     fun confirmMatch(requestId: String, companionId: String) {
-        repo.value?.createSession(requestId, companionId) { newSessionId ->
-            _sessionId.value = newSessionId
+        Log.d("MainViewModel", "confirmMatch called. Request ID: $requestId, Companion ID: $companionId")
+
+        // We change the callback to just log success, not set the state.
+        repo.value?.createSession(requestId, companionId) {
+            // The session is created. The 'listenToActiveRequest' listener
+            // will now see the "linked" status and session ID in Firebase
+            // and will handle updating the _sessionId.value for us.
+            Log.d("MainViewModel", "createSession callback executed. Firebase update is complete.")
         }
     }
 
@@ -265,19 +266,31 @@ class MainViewModel(
     fun endSession() {
         val sessionToEnd = _sessionId.value
         val requestInfo = _activeRequest.value
-        if (sessionToEnd != null && requestInfo?.companionId != null) {
-            repo.value?.endSession(sessionToEnd, requestInfo.walkerId, requestInfo.companionId!!) {
-                // Reset local state AFTER Firebase is updated
+
+        // Ensure we have all the info we need
+        if (sessionToEnd != null && requestInfo != null && requestInfo.companionId != null) {
+            repo.value?.endSession(
+                sessionToEnd,
+                requestInfo.id, // <-- PASS THE REQUEST ID HERE
+                requestInfo.walkerId,
+                requestInfo.companionId
+            ) {
+                viewModelScope.launch {
+                    UserPreferences(context).clearSessionId()
+                }
+                // This local state reset logic remains the same
                 removeLocationListener()
-                removeSessionStatusListener() // Also remove the status listener
+                removeSessionStatusListener()
                 _userStatus.value = "idle"
                 _sessionId.value = null
                 _locations.value = emptyMap()
                 _activeRequest.value = null
                 _routePoints.value = emptyList()
-                _sessionStatus.value = "active" // Reset status
+                _sessionStatus.value = "active"
                 _isCloseEnoughToStartWalk.value = false
             }
+        } else {
+            Log.e("MainViewModel", "endSession called but session or request info is missing.")
         }
     }
 
@@ -317,6 +330,8 @@ class MainViewModel(
             _activeRequest.value = request
             if (request?.status == "linked" && request.sessionId != null) {
                 _sessionId.value = request.sessionId
+
+                viewModelScope.launch { UserPreferences(context).saveSessionId(request.sessionId) }
             }
         }
     }
@@ -352,5 +367,11 @@ class MainViewModel(
         removeSessionStatusListener() // Clean up the status listener too
         locationUpdateJob?.cancel() // Stop collecting user's own location
         super.onCleared()
+    }
+
+    fun loadSession(sessionId: String, requestId: String) {
+        _sessionId.value = sessionId
+        // This will fetch the request data and start all the necessary listeners
+        listenToActiveRequest(requestId)
     }
 }

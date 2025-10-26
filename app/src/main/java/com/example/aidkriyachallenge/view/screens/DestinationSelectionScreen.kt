@@ -1,5 +1,6 @@
 package com.example.aidkriyachallenge.view.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -62,6 +63,7 @@ fun DestinationSelectionScreen(
                 cameraPositionState = cameraPositionState,
                 properties = MapProperties(isMyLocationEnabled = true),
                 onMapLongClick = { latLng ->
+                    Log.d("DestSelectScreen", "Map Long Click detected at: $latLng")
                     // When user long-presses, update the selected location
                     selectedLocation = latLng
                 }

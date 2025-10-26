@@ -7,6 +7,7 @@ import android.location.Location
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -145,7 +146,9 @@ fun RequestScreen(
                         else -> {
                             CompanionFoundView(
                                 request = activeRequest!!,
-                                onConfirm = { viewModel.confirmMatch(activeRequest!!.id, activeRequest!!.companionId!!) },
+                                onConfirm = {
+                                    Log.d("RequestScreen", "onConfirm lambda executed! Calling ViewModel...")
+                                    viewModel.confirmMatch(activeRequest!!.id, activeRequest!!.companionId!!) },
                                 onReject = { viewModel.rejectCompanion(activeRequest!!.id, activeRequest!!.companionId!!) }
                             )
                         }
