@@ -1,4 +1,4 @@
-package com.example.aidkriyachallenge.dummyui
+package com.example.aidkriyachallenge.dummyUi
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

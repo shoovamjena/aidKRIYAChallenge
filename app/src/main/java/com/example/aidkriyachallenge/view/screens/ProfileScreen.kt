@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.innerShadow
-import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -60,7 +59,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.dataModel.UserProfile
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
+import com.example.aidkriyachallenge.viewModel.MyViewModel
 
 @Composable
 fun ProfileScreen(viewModel: MyViewModel,
@@ -184,14 +183,14 @@ fun ProfileScreen(viewModel: MyViewModel,
                     ) {
                         Text(
                             "⭐",
-                            fontSize = 38.sp
+                            fontSize = 32.sp
                         )
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 "4.5",
-                                fontSize = 32.sp,
+                                fontSize = 28.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
@@ -208,7 +207,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                     ) {
                         Text(
                             "50 km",
-                            fontSize = 32.sp,
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(

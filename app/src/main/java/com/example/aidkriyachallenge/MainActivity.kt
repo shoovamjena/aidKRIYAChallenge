@@ -19,10 +19,8 @@ import com.example.aidkriyachallenge.repo.ReviewRepo
 import com.example.aidkriyachallenge.ui.theme.AidKRIYAChallengeTheme
 import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.example.aidkriyachallenge.viewModel.MainViewModelFactory
+import com.example.aidkriyachallenge.viewModel.MyViewModel
 import com.example.aidkriyachallenge.viewModel.ReviewViewModel
-
-import com.example.aidkriyachallenge.viewModel.ReviewViewModel
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage

@@ -1,4 +1,4 @@
-package com.example.aidkriyachallenge.viewmodel
+package com.example.aidkriyachallenge.viewModel
 
 import android.content.Context
 import android.net.Uri

@@ -49,3 +49,6 @@ val nothingFontFamily = FontFamily(
 val roundFontFamily = FontFamily(
     Font(R.font.rounds_black, FontWeight.ExtraBold)
 )
+val inspDoc = FontFamily(
+    Font(R.font.inspdoc, FontWeight.Normal)
+)

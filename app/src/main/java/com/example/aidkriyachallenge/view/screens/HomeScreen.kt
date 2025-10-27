@@ -1,46 +1,123 @@
 package com.example.aidkriyachallenge.view.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.innerShadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.aidkriyachallenge.R
+import com.example.aidkriyachallenge.ui.theme.inspDoc
+import com.example.aidkriyachallenge.ui.theme.odin
 import com.example.aidkriyachallenge.viewModel.MainViewModel
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
+import com.example.aidkriyachallenge.viewModel.MyViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: MyViewModel, // Your existing ViewModel
-    mapRoutingViewModel: MainViewModel, // The ViewModel for the tracking feature
-    navController: NavController
+    viewModel: MyViewModel,
+    navController: NavController,
+    mapRoutingViewModel: MainViewModel,
 ) {
+    val state by viewModel.Profilestate.collectAsState()
     // --- Collect the role needed for MapRouting ---
     val mapRoutingUserRole by mapRoutingViewModel.userRole.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Home") })
-        }
     ) { padding ->
-        // Use Column for better arrangement of multiple buttons
+        Box(
+            modifier = Modifier
+                .fillMaxHeight(0.3f)
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.tertiary,
+                            MaterialTheme.colorScheme.surfaceTint,
+                        )
+                    ), shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
+                ),
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(15.dp)
+                    .size(100.dp)
+                    .align(Alignment.TopEnd)
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.profile),
+                    contentDescription = "Profile Image",
+                )
+            }
+            Text(
+                "WELCOME",
+                fontFamily = odin,
+                fontSize = 46.sp,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier.padding(top = 50.dp, start = 20.dp)
+            )
+
+            Text(
+                state.username,
+                fontFamily = inspDoc,
+                fontSize = 96.sp,
+                color = Color(0xFF0F790E),
+                modifier = Modifier.padding(top = 100.dp, start = 20.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .align(Alignment.BottomCenter)
+                    .padding(vertical = 10.dp)
+                    .height(50.dp)
+                    .clickable {
+                        navController.navigate("ReviewSeen")
+                    }
+                    .innerShadow(
+                        shape = RoundedCornerShape(50),
+                        shadow = Shadow(
+                            radius = 25.dp,
+                            Color.White
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "SEE REVIEWS",
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.surface
+                )
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -86,20 +163,22 @@ fun HomeScreen(
             Button(onClick = { navController.navigate("ReviewSeen") }) {
                 Text("ReviewSeen")
             }
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Button(onClick = { navController.navigate("profileSk") }) {
+            Spacer(modifier = Modifier.height(5.dp))
+            Button(
+                onClick = {
+                    navController.navigate("profileSk")
+                },
+            ) {
                 Text("profileScreen")
             }
-            Spacer(modifier = Modifier.height(10.dp))
-
             Button(
                 onClick = {
                     viewModel.logout()
-                    navController.navigate("welcome") {
+                    navController.navigate("welcome"){
                         popUpTo(0) { inclusive = true }
                     }
-                }
+                },
+
             ) {
                 Text("Logout")
             }

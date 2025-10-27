@@ -17,8 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.dataModel.Screen
-import com.example.aidkriyachallenge.dummyui.ReviewScreen
-import com.example.aidkriyachallenge.dummyui.ReviewSubmitScreen
+import com.example.aidkriyachallenge.dummyUi.ReviewScreen
+import com.example.aidkriyachallenge.dummyUi.ReviewSubmitScreen
 import com.example.aidkriyachallenge.view.screens.ProfileScreen
 
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
@@ -29,21 +29,16 @@ import com.example.aidkriyachallenge.view.screens.RequestScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
 import com.example.aidkriyachallenge.viewModel.MainViewModel
+import com.example.aidkriyachallenge.viewModel.AuthEvent
+import com.example.aidkriyachallenge.viewModel.MyViewModel
 import com.example.aidkriyachallenge.viewModel.ReviewViewModel
-
-import com.example.aidkriyachallenge.view.screens.ProfileScreen
-import com.example.aidkriyachallenge.view.screens.SplashScreen
-import com.example.aidkriyachallenge.view.screens.WelcomeScreen
-import com.example.aidkriyachallenge.viewModel.ReviewViewModel
-import com.example.aidkriyachallenge.viewmodel.AuthEvent
-import com.example.aidkriyachallenge.viewmodel.MyViewModel
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun AppNavHost(viewModel: MyViewModel,reviewViewModel: ReviewViewModel,mapRoutingViewModel: MainViewModel) {
+fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRoutingViewModel: MainViewModel) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val navController = rememberNavController()
