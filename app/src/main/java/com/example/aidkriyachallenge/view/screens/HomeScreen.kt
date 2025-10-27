@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,7 +32,9 @@ import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +59,7 @@ fun HomeScreen(
 
     Scaffold(
     ) { padding ->
+        //This is the top box of the screen
         Box(
             modifier = Modifier
                 .fillMaxHeight(0.3f)
@@ -72,9 +78,30 @@ fun HomeScreen(
                     .padding(15.dp)
                     .size(100.dp)
                     .align(Alignment.TopEnd)
+                    .clickable {
+                        navController.navigate("profileSk")
+                    }
             ) {
                 Image(
                     painter = painterResource(R.drawable.profile),
+                    contentDescription = "Profile Image",
+                )
+            }
+            IconButton(
+                onClick = {
+                    viewModel.logout()
+                    navController.navigate("welcome"){
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                modifier = Modifier
+                    .padding(top =85.dp)
+                    .padding(40.dp)
+                    .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
+                    .align(Alignment.TopEnd)
+            ){
+                Icon(
+                    painter = painterResource(R.drawable.baseline_power_settings_new_24),
                     contentDescription = "Profile Image",
                 )
             }
@@ -118,6 +145,9 @@ fun HomeScreen(
                 )
             }
         }
+        //TODO
+        //This will show scrollable card corousel showing distance walked, calories burned, steps taken and last walk (if that exists)
+        //And then it will show a map that will show the current location of the device and then replace the satrt Live Tracking Session with a large button with a text "START WALK"
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -152,36 +182,8 @@ fun HomeScreen(
                     Text("Start Live Tracking Session")
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp)) // Add space
 
-            // --- Your Existing Buttons ---
-            Button(onClick = { navController.navigate("ReviewSubmit") }) {
-                Text("ReviewSubmit")
-            }
-            Spacer(modifier = Modifier.height(10.dp))
 
-            Button(onClick = { navController.navigate("ReviewSeen") }) {
-                Text("ReviewSeen")
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-            Button(
-                onClick = {
-                    navController.navigate("profileSk")
-                },
-            ) {
-                Text("profileScreen")
-            }
-            Button(
-                onClick = {
-                    viewModel.logout()
-                    navController.navigate("welcome"){
-                        popUpTo(0) { inclusive = true }
-                    }
-                },
-
-            ) {
-                Text("Logout")
-            }
         }
     }
 }
