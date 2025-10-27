@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val auth = FirebaseAuth.getInstance()
+
         val storage = FirebaseStorage.getInstance()
         val firestore = FirebaseFirestore.getInstance()
         val repo = Repo(firestore, auth)
