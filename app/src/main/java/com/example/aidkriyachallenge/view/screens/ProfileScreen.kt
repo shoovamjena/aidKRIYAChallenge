@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +81,10 @@ fun ProfileScreen(viewModel: MyViewModel,
             viewModel.loadProfile()
         }
     }
+
+    val isProfileComplete = state.username.isNotBlank() &&
+            state.gender.isNotBlank() &&
+            state.walkingSpeed.isNotBlank()
 
     // Helper function to display default "-" if empty
     fun String.orDefault() = ifEmpty { "-" }
@@ -301,6 +306,33 @@ fun ProfileScreen(viewModel: MyViewModel,
                 Icons.Default.Edit,
                 contentDescription = "Edit Profile"
             )
+        }
+        if (isProfileComplete) {
+            IconButton(
+                onClick = {
+                    // Check if we came from 'home' or 'splash'
+                    val cameFromHome = navController.previousBackStackEntry?.destination?.route == "home"
+                    if (cameFromHome) {
+                        // If we came from Home, just go back.
+                        navController.popBackStack()
+                    } else {
+                        // If we came from Splash, navigate to Home and clear the stack.
+                        navController.navigate("home") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .padding(20.dp)
+                    .size(100.dp) // Matched to your Edit button
+                    .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(25))
+                    .align(Alignment.BottomStart) // Aligned to the bottom-left
+            ) {
+                Icon(
+                    Icons.Default.Home,
+                    contentDescription = "Go to Home"
+                )
+            }
         }
     }
 

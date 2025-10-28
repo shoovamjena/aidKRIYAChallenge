@@ -120,6 +120,26 @@ private fun getZoomForRadius(radiusInMeters: Int): Float {
         else -> 15f
     }
 }
+// In HomeScreen.kt (outside any Composable)
+
+@SuppressLint("SimpleDateFormat")
+private fun formatLastWalk(timestamp: Long?): String {
+    if (timestamp == null || timestamp == 0L) return "N/A"
+
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val days = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diff)
+
+    return when {
+        days == 0L -> "Today"
+        days == 1L -> "Yesterday"
+        days < 7L -> "$days days ago"
+        else -> {
+            val sdf = java.text.SimpleDateFormat("dd MMM yyyy")
+            sdf.format(java.util.Date(timestamp))
+        }
+    }
+}
 
 @SuppressLint("DefaultLocale")
 @Composable
@@ -143,12 +163,30 @@ fun HomeScreen(
     val radiusOptions = listOf(1000, 2000, 5000) // in meters
     var selectedRadius by remember { mutableIntStateOf(radiusOptions.first()) }
 
-    val stats = listOf(
-        StatItem("Distance", "0.0 km", Icons.AutoMirrored.Filled.DirectionsWalk),
-        StatItem("Calories", "0 kcal", Icons.Default.LocalFireDepartment),
-        StatItem("Steps", "0", Icons.Default.StackedLineChart),
-        StatItem("Last Walk", "N/A", Icons.Default.History)
-    )
+    val stats = remember(state) {
+        listOf(
+            StatItem(
+                "Distance",
+                String.format("%.1f km", state.totalDistance),
+                Icons.AutoMirrored.Filled.DirectionsWalk
+            ),
+            StatItem(
+                "Calories",
+                "${state.totalCalories} kcal",
+                Icons.Default.LocalFireDepartment
+            ),
+            StatItem(
+                "Steps",
+                "${state.totalSteps}",
+                Icons.Default.StackedLineChart
+            ),
+            StatItem(
+                "Last Walk",
+                formatLastWalk(state.lastWalkTimestamp), // Use our new helper
+                Icons.Default.History
+            )
+        )
+    }
 
     val context = LocalContext.current
 

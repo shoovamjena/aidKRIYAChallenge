@@ -13,11 +13,13 @@ import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.repo.Repo
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -32,8 +34,12 @@ class MyViewModel (
     val state: StateFlow<LoginUiState> = _state.asStateFlow()
 
     private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     private val googleAuthClient = GoogleAuthClient(context)
+    // In MyViewModel.kt, near your other state declarations
+    val isProfileComplete = userPref.isProfileComplete
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     // Session flow from DataStore
     val userEmail = userPref.getUserEmail()
@@ -55,12 +61,14 @@ class MyViewModel (
     fun logout() {
         //Resetting state
         _state.value = LoginUiState()
+        _Profilestate.value = ProfileState() // <-- Good to reset this too
 
         viewModelScope.launch {
             FirebaseAuth.getInstance().signOut()
             userPref.clearUserEmail()
             userPref.clearUid()
             userPref.clearUserRole()
+            userPref.saveProfileCompleteStatus(false) // <-- ADD THIS LINE
             googleAuthClient.signOut()
         }
     }
@@ -70,19 +78,33 @@ class MyViewModel (
         initializeAuth()
     }
 
+    // In MyViewModel.kt
     private fun initializeAuth() = viewModelScope.launch {
         try {
-            val profile = combine(userEmail, userId,userRole) { email, uid ,role->
-                if (email != null && uid != null && role != null) UserProfile(email = email, uid = uid, isWanderer = role) else null
-            }.firstOrNull()
+            val email = userEmail.first()
+            if (email != null) {
+                // User is logged in, so we MUST load their profile
+                // and wait for it to set the DataStore flag.
+                Log.d("MyViewModel", "User is logged in. Loading profile...")
+                val loadProfileJob = loadProfile() // 1. Get the Job
+                loadProfileJob.join() // 2. WAIT for it to complete
+                Log.d("MyViewModel", "Profile load complete.")
 
-            profile?.let { _state.value = _state.value.copy(user = it)
-                loadProfile()
+                // Also update the LoginUiState
+                val uid = userId.first()
+                val role = userRole.first()
+                if(uid != null && role != null) {
+                    _state.update { it.copy(user = UserProfile(email = email, uid = uid, isWanderer = role)) }
+                }
+            } else {
+                Log.d("MyViewModel", "User is not logged in.")
             }
-            _isInitialized.value = true
         } catch (e: Exception) {
-            Log.e("MyViewModel", "Error initializing auth", e)
+            Log.e("MyViewModel", "Error during initializeAuth", e)
+        } finally {
+            // Now it's safe to unblock the splash screen.
             _isInitialized.value = true
+            Log.d("MyViewModel", "Initialization finished.")
         }
     }
 
@@ -180,30 +202,26 @@ class MyViewModel (
     fun onImageChanged(value: Uri?) { _Profilestate.update { it.copy(imageUri = value) } }
 
     fun saveProfile() = viewModelScope.launch {
+        // ... (your existing code to get uid, email, role, and build the profile object)
         val uid = userId.firstOrNull() ?: return@launch
         val email = userEmail.firstOrNull() ?: ""
         val role = userRole.firstOrNull()?:return@launch
-
         var imageUrl = ""
-
         val profile = UserProfile(
-            uid = uid,
-            email = email,
-            createdAt = System.currentTimeMillis(),
-            username = Profilestate.value.username,
-            dob = Profilestate.value.dob,
-            gender = Profilestate.value.gender,
-            address = Profilestate.value.address,
-            walkingSpeed = Profilestate.value.walkingSpeed,
-            description = Profilestate.value.description,
-            imageUrl = imageUrl,
-            isWanderer = role
+            // ... (all profile fields)
         )
 
         when (val result = repo.saveUserProfile(profile)) {
             is ResultState.Success -> {
-
                 Toast.makeText(context, result.data, Toast.LENGTH_SHORT).show()
+
+                // --- ADD THIS BLOCK ---
+                // After saving, update the DataStore flag
+                val isComplete = Profilestate.value.username.isNotBlank() &&
+                        Profilestate.value.gender.isNotBlank() &&
+                        Profilestate.value.walkingSpeed.isNotBlank()
+                userPref.saveProfileCompleteStatus(isComplete)
+                // --- END OF BLOCK ---
             }
             is ResultState.Error -> {
                 Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
@@ -214,33 +232,46 @@ class MyViewModel (
         }
     }
 
-    fun loadProfile() = viewModelScope.launch {
-        val uid = userId.firstOrNull() ?: return@launch
-        val role = userRole.firstOrNull() ?:return@launch
+    // In MyViewModel.kt
+    fun loadProfile(): Job { // <-- 1. Change return type to Job
+        return viewModelScope.launch { // <-- 2. Return the launch block
+            val uid = userId.firstOrNull() ?: return@launch
+            val role = userRole.firstOrNull() ?:return@launch
 
-        when (val result = repo.getUserProfile(uid,role)) {
-            is ResultState.Success -> {
-                result.data?.let { profile ->
-                    _Profilestate.update {
-                        it.copy(
-                            username = profile.username,
-                            dob = profile.dob,
-                            gender = profile.gender,
-                            address = profile.address,
-                            walkingSpeed = profile.walkingSpeed,
-                            description = profile.description,
-                            imageUri = profile.imageUrl.toUri()
-                        )
+            var isComplete = false // Default to false
+            when (val result = repo.getUserProfile(uid,role)) {
+                is ResultState.Success -> {
+                    result.data?.let { profile ->
+                        _Profilestate.update {
+                            it.copy(
+                                username = profile.username,
+                                dob = profile.dob,
+                                gender = profile.gender,
+                                address = profile.address,
+                                walkingSpeed = profile.walkingSpeed,
+                                description = profile.description,
+                                imageUri = profile.imageUrl.toUri(),
+                                // Your stats fields...
+                                totalDistance = profile.totalDistance,
+                                totalCalories = profile.totalCalories,
+                                totalSteps = profile.totalSteps,
+                                lastWalkTimestamp = profile.lastWalkTimestamp
+                            )
+                        }
+                        // --- 3. CHECK COMPLETENESS ---
+                        isComplete = profile.username.isNotBlank() &&
+                                profile.gender.isNotBlank() &&
+                                profile.walkingSpeed.isNotBlank()
                     }
                 }
+                is ResultState.Error -> {
+                    Log.e("ProfileViewModel", "Failed to load profile: ${result.message}")
+                }
+                is ResultState.Loading -> {}
             }
-            is ResultState.Error -> {
-                // Log error or show a Toast if you want
-                Log.e("ProfileViewModel", "Failed to load profile: ${result.message}")
-            }
-            is ResultState.Loading -> {
-                // Optional: you can manage a loading indicator state if needed
-            }
+
+            // --- 4. SAVE FLAG TO DATASTORE ---
+            userPref.saveProfileCompleteStatus(isComplete)
         }
     }
 
@@ -268,5 +299,8 @@ data class ProfileState(
     val address: String = "",
     val walkingSpeed: String = "",
     val description: String = "",
-    val imageUri: Uri? = null
-)
+    val imageUri: Uri? = null,
+    val totalDistance: Double = 0.0,
+    val totalCalories: Int = 0,
+    val totalSteps: Int = 0,
+    val lastWalkTimestamp: Long? = null)
