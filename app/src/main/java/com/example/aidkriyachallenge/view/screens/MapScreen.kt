@@ -42,8 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 
-import androidx.compose.ui.platform.LocalLifecycleOwner
-
 
 import kotlinx.coroutines.launch
 
@@ -60,7 +58,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.ui.draw.clip
 
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController

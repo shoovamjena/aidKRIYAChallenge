@@ -1,6 +1,7 @@
 package com.example.aidkriyachallenge.viewModel
 
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.util.Log
@@ -24,12 +25,15 @@ import com.google.maps.android.SphericalUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MainViewModel(
-    private val context: Context
+    @SuppressLint("StaticFieldLeak") private val context: Context
 ) : ViewModel() {
 
     // --- State Properties Exposed to the UI ---
@@ -69,6 +73,75 @@ class MainViewModel(
     private val _sessionStatus = MutableStateFlow("active") // Initial session status
     val sessionStatus = _sessionStatus.asStateFlow()
 
+    private val _pendingCompanionInterests = MutableStateFlow<Set<String>>(emptySet())
+    val pendingCompanionInterests: StateFlow<Set<String>> = _pendingCompanionInterests.asStateFlow()
+
+    fun sendInterestToWalker(requestId: String) {
+        viewModelScope.launch {
+            // TODO: Call your repository to tell Firestore the companion is interested
+            // e.g., repo.sendInterest(requestId, companionId)
+
+            // Add to our local state to update the UI
+            _pendingCompanionInterests.update { it + requestId }
+
+            // TODO: Start a 10-minute timer to auto-cancel this interest
+            // startTimeoutForRequest(requestId)
+        }
+    }
+
+    // 3. THIS FUNCTION IS CALLED WHEN COMPANION CLICKS "CANCEL REQUEST"
+    fun cancelInterest(requestId: String) {
+        // TODO: Call your repo.value?.cancelInterest(requestId, ...) function here
+
+        // Remove from our local "waiting" state
+        _pendingCompanionInterests.update { it.filterNot { it == requestId }.toSet() }
+
+        // Also deselect the request to close the card
+        if (_selectedRequest.value?.id == requestId) {
+            _selectedRequest.value = null
+        }
+    }
+
+    fun observeRequestChanges() { // Make this public if you call it from HomeScreen
+        viewModelScope.launch {
+            combine(pendingRequests, pendingCompanionInterests) { available, waiting ->
+                Pair(available, waiting)
+            }.collect { (availableRequests, waitingForRequests) ->
+
+                val currentSelectedId = _selectedRequest.value?.id ?: return@collect
+                // Nothing selected, do nothing
+
+                val isStillInPendingList = availableRequests.any { it.id == currentSelectedId }
+                val isBeingWaitedFor = waitingForRequests.any { it == currentSelectedId }
+
+                // If it's not in the public list AND not in our waiting list...
+                // THEN the walker *must have* cancelled it.
+                if (!isStillInPendingList && !isBeingWaitedFor) {
+                    // Now it's safe to clear the selection
+                    _selectedRequest.value = null
+                }
+            }
+        }
+    }
+
+    private fun observeActiveRequestForCancellations() {
+        viewModelScope.launch {
+            activeRequest.collect { activeReq ->
+                // If the active request becomes null (e.g., walker cancels while we wait)
+                if (activeReq == null) {
+                    // Find any requests we were waiting for
+                    val waitingIds = _pendingCompanionInterests.value.map { it }
+
+                    // If there were any, clear them. This will trigger
+                    // observeRequestChanges() to hide the card.
+                    if (waitingIds.isNotEmpty()) {
+                        _pendingCompanionInterests.update { emptySet() }
+                    }
+                }
+            }
+        }
+    }
+
     var currentUserId: String? = null
         private set
 
@@ -80,6 +153,8 @@ class MainViewModel(
     private var locationUpdateJob: Job? = null
 
     init {
+        observeRequestChanges() // Start the smart observer
+        observeActiveRequestForCancellations() // Start the cancellation observer
         viewModelScope.launch {
             // 1. Get user ID from Firebase Auth
             val userPrefs = UserPreferences(context)
@@ -123,12 +198,9 @@ class MainViewModel(
     }
 
 
-
-
-
     // --- Public Functions for the UI ---
 
-    fun registerUser(role: String) {
+    private fun registerUser(role: String) {
         repo.value?.registerUser(role)
     }
 
@@ -161,14 +233,29 @@ class MainViewModel(
     }
 
     fun acceptCall(requestId: String) {
-        _userStatus.value = "in_session"
         val location = _currentUserLocation.value
         if (location == null) {
-            Log.e("MainViewModel", "Cannot accept call, user location is null.")
+            Log.e("MainViewModel", "Cannot send interest, user location is null.")
             return
         }
+
+        // Find the full Request object before we "lose" it
+        val requestToPend = _selectedRequest.value
+        if (requestToPend == null || requestToPend.id != requestId) {
+            Log.e("MainViewModel", "Selected request does not match ID, cannot pend")
+            return
+        }
+
+        // Your repo.acceptCall is fine. It will remove the request from the public list.
         repo.value?.acceptCall(requestId, location.latitude, location.longitude) {
+            // This is the FIX: We add the *full Request object* to our
+            // new "waiting" state, so we don't lose it.
+            _pendingCompanionInterests.update { setOf((it + requestToPend).toString()) }
+
             listenToActiveRequest(requestId)
+
+            // TODO: Start your 10-minute timeout logic here.
+            // E.g., startTimeoutForRequest(requestToPend)
         }
     }
 
@@ -177,7 +264,10 @@ class MainViewModel(
     }
 
     fun confirmMatch(requestId: String, companionId: String) {
-        Log.d("MainViewModel", "confirmMatch called. Request ID: $requestId, Companion ID: $companionId")
+        Log.d(
+            "MainViewModel",
+            "confirmMatch called. Request ID: $requestId, Companion ID: $companionId"
+        )
 
         // We change the callback to just log success, not set the state.
         repo.value?.createSession(requestId, companionId) {
@@ -200,8 +290,11 @@ class MainViewModel(
             val destination: String
 
             if (sessionStatus.value == "walking" && activeReq != null) {
-                val companionLocation = _locations.value[activeReq.companionId]?.let { "${it.first},${it.second}" }
-                if (companionLocation == null) { _routePoints.value = emptyList(); return@launch }
+                val companionLocation =
+                    _locations.value[activeReq.companionId]?.let { "${it.first},${it.second}" }
+                if (companionLocation == null) {
+                    _routePoints.value = emptyList(); return@launch
+                }
                 origin = companionLocation
                 destination = "${activeReq.destLat},${activeReq.destLng}"
             } else {
@@ -212,12 +305,18 @@ class MainViewModel(
             try {
                 val response = RetrofitClient.instance.getDirections(origin, destination, apiKey)
                 if (response.isSuccessful && response.body() != null) {
-                    val encodedPolyline = response.body()!!.routes.firstOrNull()?.overview_polyline?.points
+                    val encodedPolyline =
+                        response.body()!!.routes.firstOrNull()?.overview_polyline?.points
                     if (encodedPolyline != null) {
                         _routePoints.value = PolylineDecoder.decode(encodedPolyline)
-                    } else { _routePoints.value = emptyList() }
+                    } else {
+                        _routePoints.value = emptyList()
+                    }
                 } else {
-                    Log.e("MainViewModel", "API call failed: ${response.code()} ${response.errorBody()?.string()}")
+                    Log.e(
+                        "MainViewModel",
+                        "API call failed: ${response.code()} ${response.errorBody()?.string()}"
+                    )
                     _routePoints.value = emptyList()
                 }
             } catch (e: Exception) {
@@ -233,15 +332,20 @@ class MainViewModel(
 
         // Listen for Session Status changes
         removeSessionStatusListener() // Clean up previous status listener first
-        sessionStatusListener = dbReference.child("sessions").child(currentSessionId).child("status")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    _sessionStatus.value = snapshot.getValue(String::class.java) ?: "active"
-                }
-                override fun onCancelled(error: DatabaseError) {
-                    Log.w("MainViewModel", "Session status listener cancelled: ${error.message}")
-                }
-            })
+        sessionStatusListener =
+            dbReference.child("sessions").child(currentSessionId).child("status")
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        _sessionStatus.value = snapshot.getValue(String::class.java) ?: "active"
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.w(
+                            "MainViewModel",
+                            "Session status listener cancelled: ${error.message}"
+                        )
+                    }
+                })
 
         // Listen for Location changes
         locationListener = repo.value?.listenLocations(currentSessionId) { newLocations ->

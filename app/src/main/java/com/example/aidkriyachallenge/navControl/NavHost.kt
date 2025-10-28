@@ -19,17 +19,15 @@ import com.example.aidkriyachallenge.common.UserPreferences
 import com.example.aidkriyachallenge.dataModel.Screen
 import com.example.aidkriyachallenge.dummyUi.ReviewScreen
 import com.example.aidkriyachallenge.dummyUi.ReviewSubmitScreen
-import com.example.aidkriyachallenge.view.screens.ProfileScreen
-
 import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.view.screens.DestinationSelectionScreen
 import com.example.aidkriyachallenge.view.screens.HomeScreen
 import com.example.aidkriyachallenge.view.screens.MapScreen
-import com.example.aidkriyachallenge.view.screens.RequestScreen
+import com.example.aidkriyachallenge.view.screens.ProfileScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
-import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.example.aidkriyachallenge.viewModel.AuthEvent
+import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.example.aidkriyachallenge.viewModel.MyViewModel
 import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.google.android.gms.maps.model.LatLng
@@ -38,7 +36,11 @@ import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRoutingViewModel: MainViewModel) {
+fun AppNavHost(
+    viewModel: MyViewModel,
+    reviewViewModel: ReviewViewModel,
+    mapRoutingViewModel: MainViewModel
+) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
     val navController = rememberNavController()
@@ -122,13 +124,14 @@ fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRout
             WelcomeScreen(
                 state = state,
                 onLogin = { email, password ->
-                    viewModel.onEvent(AuthEvent.SignIn(email, password))},
-                onSignUp = { email, password ,isWanderer->
-                    viewModel.onEvent(AuthEvent.SignUp(email, password,isWanderer))
+                    viewModel.onEvent(AuthEvent.SignIn(email, password))
+                },
+                onSignUp = { email, password, isWanderer ->
+                    viewModel.onEvent(AuthEvent.SignUp(email, password, isWanderer))
                 },
                 googleAuthClient = googleAuthClient,
                 viewModel = viewModel,
-                onForgotPassword = {email->
+                onForgotPassword = { email ->
                     viewModel.onEvent(AuthEvent.ForgotPassword(email))
                 },
             )
@@ -141,8 +144,8 @@ fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRout
             )
         }
 
-        composable(route = "profileSk"){
-            ProfileScreen(viewModel,navController)
+        composable(route = "profileSk") {
+            ProfileScreen(viewModel, navController)
         }
 
         composable("ReviewSubmit") {
@@ -162,17 +165,6 @@ fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRout
 
         // --- MAP ROUTING SCREENS ---
 
-        composable(
-            route = Screen.TrackingRequest.route + "/{role}", // Use Screen object
-            arguments = listOf(navArgument("role") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val role = backStackEntry.arguments?.getString("role") ?: "Walker"
-            RequestScreen(
-                viewModel = mapRoutingViewModel,
-                role = role,
-                navController = navController
-            )
-        }
 
         composable(
             route = "${Screen.DestinationSelection.route}/{lat}/{lng}",
@@ -187,6 +179,8 @@ fun AppNavHost(viewModel: MyViewModel, reviewViewModel: ReviewViewModel, mapRout
                 startLocation = LatLng(lat, lng),
                 onCancel = { navController.popBackStack() },
                 onDestinationSelected = { latLng ->
+                    // --- MODIFIED ---
+                    // Now, we send the result back to the "home" screen's state handle
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("destination_location", latLng)

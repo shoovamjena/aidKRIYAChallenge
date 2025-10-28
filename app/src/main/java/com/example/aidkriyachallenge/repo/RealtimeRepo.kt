@@ -150,7 +150,10 @@ class RealtimeRepo(
                 }
                 trySend(requests)
             }
-            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+
+            override fun onCancelled(error: DatabaseError) {
+                close(error.toException())
+            }
         }
         query.addValueEventListener(listener)
         awaitClose { query.removeEventListener(listener) }
@@ -162,13 +165,19 @@ class RealtimeRepo(
                 val request = snapshot.getValue(Request::class.java)?.copy(id = snapshot.key ?: "")
                 onUpdate(request)
             }
-            override fun onCancelled(error: DatabaseError) { onUpdate(null) }
+
+            override fun onCancelled(error: DatabaseError) {
+                onUpdate(null)
+            }
         }
         db.child("requests").child(requestId).addValueEventListener(listener)
         return listener
     }
 
-    fun listenLocations(sessionId: String, onUpdate: (Map<String, Pair<Double, Double>>) -> Unit): ValueEventListener {
+    fun listenLocations(
+        sessionId: String,
+        onUpdate: (Map<String, Pair<Double, Double>>) -> Unit
+    ): ValueEventListener {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val map = mutableMapOf<String, Pair<Double, Double>>()
@@ -180,6 +189,7 @@ class RealtimeRepo(
                 }
                 onUpdate(map)
             }
+
             override fun onCancelled(error: DatabaseError) {}
         }
         db.child("sessions").child(sessionId).child("locations").addValueEventListener(listener)
@@ -227,4 +237,5 @@ class RealtimeRepo(
     fun confirmWalkingSession(sessionId: String) {
         db.child("sessions").child(sessionId).child("status").setValue("walking")
     }
+
 }

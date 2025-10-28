@@ -1,38 +1,21 @@
 package com.example.aidkriyachallenge.view.screens
 
 // --- NEW IMPORTS ---
-import android.Manifest
-import android.content.pm.PackageManager
-import android.location.Location
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.CameraUpdateFactory
 // --- END NEW IMPORTS ---
 
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.DirectionsWalk
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.StackedLineChart
-import androidx.compose.material3.AlertDialog // For the dialog
-import androidx.compose.material3.TextButton // For the dialog
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue // For location permission
-import androidx.compose.runtime.mutableStateOf // For location permission
-import androidx.compose.ui.platform.LocalContext
-import com.example.aidkriyachallenge.dataModel.Request // For the dialog
-import com.google.android.gms.maps.model.BitmapDescriptorFactory // For markers
-import com.google.maps.android.SphericalUtil // For distance calculation
-import com.google.maps.android.compose.Marker // For markers
-import com.google.maps.android.compose.MarkerState // For markers
-
+// --- NEW IMPORT ---
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.location.Location
+import android.os.Build
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,16 +23,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-// --- NEW IMPORT ---
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
@@ -57,27 +41,34 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.carousel.CarouselDefaults
-import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +78,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -94,17 +86,24 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.aidkriyachallenge.R
+import com.example.aidkriyachallenge.dataModel.Request
+import com.example.aidkriyachallenge.dataModel.Screen
 import com.example.aidkriyachallenge.ui.theme.inspDoc
 import com.example.aidkriyachallenge.ui.theme.odin
 import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.example.aidkriyachallenge.viewModel.MyViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.SphericalUtil
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.launch
 
 // --- Helper data class for the stats carousel ---
 private data class StatItem(
@@ -113,7 +112,16 @@ private data class StatItem(
     val icon: ImageVector
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun getZoomForRadius(radiusInMeters: Int): Float {
+    return when (radiusInMeters) {
+        1000 -> 15f // 1km
+        2000 -> 14f // 2km
+        5000 -> 13f // 5km
+        else -> 15f
+    }
+}
+
+@SuppressLint("DefaultLocale")
 @Composable
 fun HomeScreen(
     viewModel: MyViewModel,
@@ -124,7 +132,7 @@ fun HomeScreen(
     val mapRoutingUserRole by mapRoutingViewModel.userRole.collectAsState()
     LaunchedEffect(key1 = Unit) {
         viewModel.loadProfile()
-   }
+    }
 
     // --- NEW: States from MainViewModel ---
     val currentUserLocation by mapRoutingViewModel.currentUserLocation.collectAsState()
@@ -132,8 +140,11 @@ fun HomeScreen(
     val selectedRequest by mapRoutingViewModel.selectedRequest.collectAsState()
     // --- END NEW STATES ---
 
+    val radiusOptions = listOf(1000, 2000, 5000) // in meters
+    var selectedRadius by remember { mutableIntStateOf(radiusOptions.first()) }
+
     val stats = listOf(
-        StatItem("Distance", "0.0 km", Icons.Default.DirectionsWalk),
+        StatItem("Distance", "0.0 km", Icons.AutoMirrored.Filled.DirectionsWalk),
         StatItem("Calories", "0 kcal", Icons.Default.LocalFireDepartment),
         StatItem("Steps", "0", Icons.Default.StackedLineChart),
         StatItem("Last Walk", "N/A", Icons.Default.History)
@@ -146,12 +157,66 @@ fun HomeScreen(
         position = CameraPosition.fromLatLngZoom(defaultLocation, 5f)
     }
 
-    // --- NEW: Coroutine scope for the launcher's callback ---
-    val scope = rememberCoroutineScope()
+    val pendingInterests by mapRoutingViewModel.pendingCompanionInterests.collectAsState()
 
-    // --- NEW: Function to get location and animate camera ---
-    // We need this to avoid duplicating code
+    // --- NEW: States from RequestScreen ---
+    val activeRequest by mapRoutingViewModel.activeRequest.collectAsState()
+    val sessionId by mapRoutingViewModel.sessionId.collectAsState()
 
+    // --- All LaunchedEffects for permissions, location, etc., are unchanged ---
+    // ... (They are all correct)
+
+    // --- NEW: Logic to handle destination selection result ---
+    val backStackEntry = navController.currentBackStackEntry
+    val destinationLocation by backStackEntry
+        ?.savedStateHandle
+        ?.getStateFlow<LatLng?>("destination_location", null)
+        ?.collectAsState() ?: remember { mutableStateOf(null) } // <-- Add this back
+
+    // This effect triggers `raiseCall` when a destination is selected
+    LaunchedEffect(destinationLocation) {
+        destinationLocation?.let { dest ->
+            Log.d("HomeScreen", "Got destination: $dest. Calling raiseCall...")
+            mapRoutingViewModel.raiseCall(dest)
+            // Clear the result so it doesn't trigger again
+            backStackEntry?.savedStateHandle?.remove<LatLng>("destination_location")
+        }
+    }
+
+    // --- NEW: Permission Handling (copied from RequestScreen) ---
+    // This is for background location, which is only needed by the Walker
+    var hasFineLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasBackgroundLocationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
+    rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permissions ->
+            hasFineLocationPermission =
+                permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            hasBackgroundLocationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                permissions[Manifest.permission.ACCESS_BACKGROUND_LOCATION] ?: false
+            } else {
+                true
+            }
+        }
+    )
 
     // --- NEW: Permission Launcher ---
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -167,6 +232,7 @@ fun HomeScreen(
 
     // --- This LaunchedEffect handles the zoom-in animation ---
     LaunchedEffect(Unit) {
+        mapRoutingViewModel.observeRequestChanges()
         when {
             ContextCompat.checkSelfPermission(
                 context,
@@ -175,6 +241,7 @@ fun HomeScreen(
                 // Permission is already granted, start updates
                 mapRoutingViewModel.startLocationUpdates()
             }
+
             else -> {
                 // Permission is NOT granted, launch the request
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -204,9 +271,22 @@ fun HomeScreen(
         // if the role changes, but it's likely not necessary.
     }
 
+    LaunchedEffect(selectedRadius, currentUserLocation) {
+        // Only animate if we already have a location
+        if (currentUserLocation != null) {
+            val userLatLng = LatLng(currentUserLocation!!.latitude, currentUserLocation!!.longitude)
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(
+                    userLatLng,
+                    getZoomForRadius(selectedRadius)
+                ),
+                1000 // 1 second animation
+            )
+        }
+    }
 
-    Scaffold(
-    ) { padding ->
+
+    Scaffold { _ ->
         Column(
             modifier = Modifier
                 .fillMaxSize(),
@@ -223,7 +303,8 @@ fun HomeScreen(
                                 MaterialTheme.colorScheme.tertiary,
                                 MaterialTheme.colorScheme.surfaceTint,
                             )
-                        ), shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
+                        ),
+                        shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
                     ),
             ) {
                 Box(
@@ -340,28 +421,31 @@ fun HomeScreen(
                     // This enables the blue dot (current location indicator)
                     properties = MapProperties(isMyLocationEnabled = (currentUserLocation != null)),
                     uiSettings = MapUiSettings(myLocationButtonEnabled = true)
-                ){
+                ) {
                     // --- NEW: Show Walker markers if user is a Companion ---
                     if (mapRoutingUserRole == "Companion" && currentUserLocation != null) {
                         val companionLatLng =
                             LatLng(currentUserLocation!!.latitude, currentUserLocation!!.longitude)
 
-                        // --- THIS IS THE FIX ---
-
-// First, get your filtered list.
                         val nearbyRequests = pendingRequests.filter { request ->
                             val distanceInMeters = SphericalUtil.computeDistanceBetween(
                                 companionLatLng,
                                 LatLng(request.lat, request.lng)
                             )
-                            distanceInMeters <= 1000 // 1km
+                            distanceInMeters <= selectedRadius
                         }
 
-// Now, use a standard 'for' loop. This is safer for recomposition.
                         for (request in nearbyRequests) {
+                            // --- MODIFIED: Calculate distance for title ---
+                            val distanceInMeters = SphericalUtil.computeDistanceBetween(
+                                companionLatLng,
+                                LatLng(request.lat, request.lng)
+                            )
+                            val distanceText = String.format("%.1f km", distanceInMeters / 1000)
+
                             Marker(
                                 state = MarkerState(position = LatLng(request.lat, request.lng)),
-                                title = "Walker Request",
+                                title = distanceText, // <-- 1. SHOWS DISTANCE
                                 snippet = "Click for details",
                                 onClick = {
                                     mapRoutingViewModel.onMarkerClick(request)
@@ -372,54 +456,238 @@ fun HomeScreen(
                     }
                     // --- NEW: Show destination marker if a request is selected ---
                     selectedRequest?.let { request ->
+                        // 1. Define LatLng points
+                        val walkerLatLng = LatLng(request.lat, request.lng)
+                        val destinationLatLng = LatLng(request.destLat, request.destLng)
+
+                        // 2. Draw Destination Marker
                         Marker(
-                            state = MarkerState(position = LatLng(request.destLat, request.destLng)),
+                            state = MarkerState(position = destinationLatLng),
                             title = "Final Destination",
-                            // Use a different color (blue) to distinguish it
                             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                         )
+
+                        // 3. Draw Polylines (ONLY if companion location is known)
+                        currentUserLocation?.let { location ->
+                            val companionLatLng = LatLng(location.latitude, location.longitude)
+
+                            // Path 1: Companion to Walker (Blue)
+                            Polyline(
+                                points = listOf(companionLatLng, walkerLatLng),
+                                color = Color.Blue,
+                                width = 10f
+                            )
+
+                            // Path 2: Walker to Destination (Green)
+                            Polyline(
+                                points = listOf(walkerLatLng, destinationLatLng),
+                                color = Color(0xFF0F790E), // Using your app's green
+                                width = 10f
+                            )
+                        }
+                    }
+                }
+                this@Column.AnimatedVisibility(
+                    visible = selectedRequest != null,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
+                ) {
+                    selectedRequest?.let { currentRequest ->
+
+                        // --- NEW: Check if this request is pending ---
+                        val isPending = pendingInterests.contains(currentRequest.id)
+
+                        // --- B. SHOW INFO CARD ---
+                        WalkerInfoCard(
+                            request = currentRequest,
+                            currentUserLocation = currentUserLocation,
+                            onAccept = {
+                                // 1. Show the Toast
+                                Toast.makeText(
+                                    context,
+                                    "Walking interest sent to the wanderer \n They may accept or reject it",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                // 2. Tell the VM to send interest
+                                mapRoutingViewModel.sendInterestToWalker(currentRequest.id)
+                                mapRoutingViewModel.acceptCall(currentRequest.id)
+                                // 3. The card will auto-flip to "Waiting..."
+                                //    on the next recomposition
+                            },
+                            onDismiss = {
+                                mapRoutingViewModel.onMarkerClick(null)
+                            }
+                        )
+
+                    }
+                }
+                if (mapRoutingUserRole == "Companion") {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        radiusOptions.forEach { radiusInMeters ->
+                            val isSelected = radiusInMeters == selectedRadius
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { selectedRadius = radiusInMeters },
+                                label = { Text("${radiusInMeters / 1000} km") },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
                     }
                 }
 
             }
-            if (selectedRequest != null) {
-                RequestInfoDialog(
-                    request = selectedRequest!!,
-                    currentUserLocation = currentUserLocation,
-                    onDismiss = { mapRoutingViewModel.onMarkerClick(null) },
-                    onAccept = {
-                        mapRoutingViewModel.acceptCall(selectedRequest!!.id)
-                        mapRoutingViewModel.onMarkerClick(null)
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .heightIn(min = 56.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                when (mapRoutingUserRole) {
+                    "Walker" -> {
+                        // --- Walker Flow UI ---
+                        WalkerFlowUI(
+                            activeRequest = activeRequest,
+                            sessionId = sessionId,
+                            currentUserLocation = currentUserLocation,
+                            navController = navController,
+                            onConfirm = {
+                                mapRoutingViewModel.confirmMatch(
+                                    activeRequest!!.id,
+                                    activeRequest!!.companionId!!
+                                )
+                            },
+                            onReject = {
+                                mapRoutingViewModel.rejectCompanion(
+                                    activeRequest!!.id,
+                                    activeRequest!!.companionId!!
+                                )
+                            }
+                        )
                     }
-                )
+
+                    "Companion" -> {
+                        // --- Companion Flow UI (is just the map, so show nothing here) ---
+                        // Or you could show a status text
+                        Text("Ready to accept requests")
+                    }
+
+                    else -> {
+                        // --- Loading Role ---
+                        CircularProgressIndicator()
+                    }
+                }
             }
-            if (mapRoutingUserRole == "Walker") {
-                Button(
-                    onClick = {
-                        // This navigation is correct, it leads to the RequestScreen
-                        navController.navigate("tracking_request/Walker")
-                    },
-                    enabled = true, // Button is enabled if it's visible
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .height(56.dp)
+        }
+    }
+}
+
+@SuppressLint("DefaultLocale")
+@Composable
+private fun WalkerFlowUI(
+    activeRequest: Request?,
+    sessionId: String?,
+    currentUserLocation: Location?,
+    navController: NavController,
+    onConfirm: () -> Unit,
+    onReject: () -> Unit
+) {
+    // This logic is copied directly from RequestScreen
+    when {
+        // State 1: No request. Show "START WALK" button.
+        activeRequest == null && sessionId == null -> {
+            Button(
+                onClick = {
+                    currentUserLocation?.let { location ->
+                        navController.navigate(
+                            "${Screen.DestinationSelection.route}/${location.latitude}/${location.longitude}"
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Text("START WALK", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // State 2: Request sent, no companion yet.
+        activeRequest?.companionId == null -> {
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "START WALK",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        "Looking for a companion...",
+                        style = MaterialTheme.typography.headlineSmall
                     )
+                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                 }
-            } else if (mapRoutingUserRole == null) {
-                // Show a loading indicator while role is being determined
-                CircularProgressIndicator(
+            }
+        }
+
+        // State 3: Companion found! Show the confirmation view.
+        // We'll show this as a full-screen composable.
+        else -> {
+            // We need to navigate to a new screen for the full-map view
+            // OR show it as a dialog.
+            // For now, let's re-use the CompanionFoundView as a Dialog
+            // (A better solution would be to navigate to a new screen)
+
+            // --- This part is tricky. CompanionFoundView IS a map. ---
+            // You can't put a map in this small box.
+            // Let's just show the CARD part.
+
+            val distance = remember(activeRequest, currentUserLocation) {
+                if (activeRequest.companionLat != null) {
+                    val d = SphericalUtil.computeDistanceBetween(
+                        LatLng(activeRequest.lat, activeRequest.lng),
+                        activeRequest.companionLng?.let { LatLng(activeRequest.companionLat, it) }
+                    )
+                    String.format("%.1f km away", d / 1000)
+                } else "..."
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .padding(16.dp)
-                        .height(56.dp)
-                )
+                        .fillMaxWidth()
+                ) {
+                    Text("Companion Found!", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Text("Your potential companion is $distance")
+                    Spacer(Modifier.height(16.dp))
+                    Row {
+                        Button(
+                            onClick = onReject,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Reject")
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Button(onClick = onConfirm) {
+                            Text("Confirm")
+                        }
+                    }
+                }
             }
         }
     }
@@ -462,13 +730,18 @@ private fun StatCard(item: StatItem) {
         }
     }
 }
+
+
+@SuppressLint("DefaultLocale")
 @Composable
-fun RequestInfoDialog(
+private fun WalkerInfoCard(
     request: Request,
     currentUserLocation: Location?,
+    onAccept: () -> Unit,
     onDismiss: () -> Unit,
-    onAccept: () -> Unit
+    modifier: Modifier = Modifier
 ) {
+    // 1. Calculate Companion-to-Walker distance
     val distance = remember(currentUserLocation, request) {
         if (currentUserLocation != null) {
             val distanceInMeters = SphericalUtil.computeDistanceBetween(
@@ -476,22 +749,99 @@ fun RequestInfoDialog(
                 LatLng(request.lat, request.lng)
             )
             String.format("%.1f km away", distanceInMeters / 1000)
-        } else { "Calculating distance..." }
+        } else {
+            "Calculating..."
+        }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New Request") },
-        text = {
-            Column {
-                Text("A user is requesting a companion.")
-                Spacer(Modifier.height(8.dp))
-                Text("A destination has been set for this walk.")
-                Spacer(Modifier.height(8.dp))
-                Text("Distance from you: $distance")
+    // --- NEW: Calculate Walker-to-Destination distance ---
+    val walkDistance = remember(request) {
+        val wLatLng = LatLng(request.lat, request.lng)
+        val dLatLng = LatLng(request.destLat, request.destLng)
+        val distanceInMeters = SphericalUtil.computeDistanceBetween(wLatLng, dLatLng)
+        String.format("%.1f km", distanceInMeters / 1000)
+    }
+    // --- END NEW ---
+
+    // 2. Build the Card UI
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // --- Walker Profile Info ---
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Walker Request", // TODO: Replace with request.walkerName
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = distance, // This is Companion -> Walker
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                // --- NEW: Display the walk distance ---
+                Text(
+                    text = "Walk Distance: $walkDistance", // This is Walker -> Dest
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                // --- END NEW ---
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // --- TODO: Populate this from your Request object ---
+                Text(
+                    text = "Gender: N/A",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "Speed: N/A",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "Rating: ☆ 0.0",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
-        },
-        confirmButton = { Button(onClick = onAccept) { Text("Accept") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
-    )
+
+            // --- Accept/Reject Buttons (Unchanged) ---
+            Row {
+                IconButton(
+                    onClick = onDismiss,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Reject")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                IconButton(
+                    onClick = onAccept,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = "Accept")
+                }
+            }
+        }
+    }
 }
+
+// --- ADD THIS NEW COMPOSABLE TO HomeScreen.kt ---
+
