@@ -14,6 +14,25 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 // --- END NEW IMPORTS ---
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material3.AlertDialog // For the dialog
+import androidx.compose.material3.TextButton // For the dialog
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue // For location permission
+import androidx.compose.runtime.mutableStateOf // For location permission
+import androidx.compose.ui.platform.LocalContext
+import com.example.aidkriyachallenge.dataModel.Request // For the dialog
+import com.google.android.gms.maps.model.BitmapDescriptorFactory // For markers
+import com.google.maps.android.SphericalUtil // For distance calculation
+import com.google.maps.android.compose.Marker // For markers
+import com.google.maps.android.compose.MarkerState // For markers
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -107,6 +126,12 @@ fun HomeScreen(
         viewModel.loadProfile()
    }
 
+    // --- NEW: States from MainViewModel ---
+    val currentUserLocation by mapRoutingViewModel.currentUserLocation.collectAsState()
+    val pendingRequests by mapRoutingViewModel.pendingRequests.collectAsState()
+    val selectedRequest by mapRoutingViewModel.selectedRequest.collectAsState()
+    // --- END NEW STATES ---
+
     val stats = listOf(
         StatItem("Distance", "0.0 km", Icons.Default.DirectionsWalk),
         StatItem("Calories", "0 kcal", Icons.Default.LocalFireDepartment),
@@ -115,7 +140,6 @@ fun HomeScreen(
     )
 
     val context = LocalContext.current
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     val defaultLocation = LatLng(20.5937, 78.9629) // Default to India
     val cameraPositionState = rememberCameraPositionState {
@@ -127,54 +151,57 @@ fun HomeScreen(
 
     // --- NEW: Function to get location and animate camera ---
     // We need this to avoid duplicating code
-    val getLocationAndAnimate = {
-        // We must check permission *again* here for safety
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-                location?.let {
-                    val userLatLng = LatLng(it.latitude, it.longitude)
-                    // We need a coroutine scope to animate
-                    scope.launch {
-                        cameraPositionState.animate(
-                            CameraUpdateFactory.newLatLngZoom(userLatLng, 17f), 1000
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     // --- NEW: Permission Launcher ---
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted: Boolean ->
             if (isGranted) {
-                // Permission was granted. Now get location.
-                getLocationAndAnimate()
+                // Permission granted, start location updates via ViewModel
+                mapRoutingViewModel.startLocationUpdates()
             }
-            // else: Permission denied. The map will stay zoomed out.
+            // else: Permission denied. Map will stay zoomed out.
         }
     )
 
     // --- This LaunchedEffect handles the zoom-in animation ---
     LaunchedEffect(Unit) {
         when {
-            // Check if we already have permission
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
-                // Permission is already granted, just get location
-                getLocationAndAnimate()
+                // Permission is already granted, start updates
+                mapRoutingViewModel.startLocationUpdates()
             }
-            // TODO: You can add logic for shouldShowRequestPermissionRationale here if desired
             else -> {
                 // Permission is NOT granted, launch the request
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
+    }
+
+    // --- NEW: LaunchedEffect to animate camera ONCE to user's location ---
+    val hasAnimatedToLocation = remember { mutableStateOf(false) }
+    LaunchedEffect(currentUserLocation) {
+        if (currentUserLocation != null && !hasAnimatedToLocation.value) {
+            val userLatLng = LatLng(currentUserLocation!!.latitude, currentUserLocation!!.longitude)
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(userLatLng, 15f), // Zoom in a bit
+                1000
+            )
+            hasAnimatedToLocation.value = true // Mark as animated
+        }
+    }
+
+    // --- NEW: LaunchedEffect to listen for requests if user is a Companion ---
+    LaunchedEffect(mapRoutingUserRole) {
+        if (mapRoutingUserRole == "Companion") {
+            mapRoutingViewModel.listenToPendingRequests()
+        }
+        // Optional: You could add an `else` block to stop listening
+        // if the role changes, but it's likely not necessary.
     }
 
 
@@ -231,45 +258,51 @@ fun HomeScreen(
                         contentDescription = "Profile Image",
                     )
                 }
-                Text(
-                    "WELCOME",
-                    fontFamily = odin,
-                    fontSize = 46.sp,
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.padding(top = 50.dp, start = 20.dp)
-                )
-
-                Text(
-                    state.username,
-                    fontFamily = inspDoc,
-                    fontSize = 96.sp,
-                    color = Color(0xFF0F790E),
-                    modifier = Modifier.padding(top = 70.dp, start = 20.dp)
-                )
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth(0.7f)
-                        .align(Alignment.BottomCenter)
-                        .padding(vertical = 10.dp)
-                        .height(50.dp)
-                        .clickable {
-                            navController.navigate("ReviewSeen")
-                        }
-                        .innerShadow(
-                            shape = RoundedCornerShape(50),
-                            shadow = Shadow(
-                                radius = 25.dp,
-                                Color.White
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(top = 50.dp, start = 25.dp),
                 ) {
                     Text(
-                        "SEE REVIEWS",
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.surface
+                        "WELCOME",
+                        fontFamily = odin,
+                        fontSize = 46.sp,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
                     )
+
+                    Text(
+                        state.username,
+                        fontFamily = inspDoc,
+                        fontSize = 96.sp,
+                        color = Color(0xFF0F790E),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .align(Alignment.CenterHorizontally)
+                            .padding(vertical = 10.dp)
+                            .height(50.dp)
+                            .clickable {
+                                navController.navigate("ReviewSeen")
+                            }
+                            .innerShadow(
+                                shape = RoundedCornerShape(50),
+                                shadow = Shadow(
+                                    radius = 25.dp,
+                                    Color.White
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "SEE REVIEWS",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.surface
+                        )
+                    }
                 }
+
+
             }
 
             // --- Stats Carousel (as LazyRow) ---
@@ -305,39 +338,88 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
                     // This enables the blue dot (current location indicator)
-                    properties = MapProperties(isMyLocationEnabled = true),
+                    properties = MapProperties(isMyLocationEnabled = (currentUserLocation != null)),
                     uiSettings = MapUiSettings(myLocationButtonEnabled = true)
-                )
+                ){
+                    // --- NEW: Show Walker markers if user is a Companion ---
+                    if (mapRoutingUserRole == "Companion" && currentUserLocation != null) {
+                        val companionLatLng =
+                            LatLng(currentUserLocation!!.latitude, currentUserLocation!!.longitude)
 
+                        // --- THIS IS THE FIX ---
+
+// First, get your filtered list.
+                        val nearbyRequests = pendingRequests.filter { request ->
+                            val distanceInMeters = SphericalUtil.computeDistanceBetween(
+                                companionLatLng,
+                                LatLng(request.lat, request.lng)
+                            )
+                            distanceInMeters <= 1000 // 1km
+                        }
+
+// Now, use a standard 'for' loop. This is safer for recomposition.
+                        for (request in nearbyRequests) {
+                            Marker(
+                                state = MarkerState(position = LatLng(request.lat, request.lng)),
+                                title = "Walker Request",
+                                snippet = "Click for details",
+                                onClick = {
+                                    mapRoutingViewModel.onMarkerClick(request)
+                                    true // Consume the click event
+                                }
+                            )
+                        }
+                    }
+                    // --- NEW: Show destination marker if a request is selected ---
+                    selectedRequest?.let { request ->
+                        Marker(
+                            state = MarkerState(position = LatLng(request.destLat, request.destLng)),
+                            title = "Final Destination",
+                            // Use a different color (blue) to distinguish it
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        )
+                    }
+                }
 
             }
-            Button(
-                onClick = {
-                    mapRoutingUserRole?.let { role ->
-                        navController.navigate("tracking_request/$role")
+            if (selectedRequest != null) {
+                RequestInfoDialog(
+                    request = selectedRequest!!,
+                    currentUserLocation = currentUserLocation,
+                    onDismiss = { mapRoutingViewModel.onMarkerClick(null) },
+                    onAccept = {
+                        mapRoutingViewModel.acceptCall(selectedRequest!!.id)
+                        mapRoutingViewModel.onMarkerClick(null)
                     }
-                },
-                enabled = mapRoutingUserRole != null,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .height(56.dp)
-            ) {
-                if (mapRoutingUserRole == null) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
+                )
+            }
+            if (mapRoutingUserRole == "Walker") {
+                Button(
+                    onClick = {
+                        // This navigation is correct, it leads to the RequestScreen
+                        navController.navigate("tracking_request/Walker")
+                    },
+                    enabled = true, // Button is enabled if it's visible
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .height(56.dp)
+                ) {
                     Text(
                         "START WALK",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
+            } else if (mapRoutingUserRole == null) {
+                // Show a loading indicator while role is being determined
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .height(56.dp)
+                )
             }
         }
     }
@@ -379,4 +461,37 @@ private fun StatCard(item: StatItem) {
             )
         }
     }
+}
+@Composable
+fun RequestInfoDialog(
+    request: Request,
+    currentUserLocation: Location?,
+    onDismiss: () -> Unit,
+    onAccept: () -> Unit
+) {
+    val distance = remember(currentUserLocation, request) {
+        if (currentUserLocation != null) {
+            val distanceInMeters = SphericalUtil.computeDistanceBetween(
+                LatLng(currentUserLocation.latitude, currentUserLocation.longitude),
+                LatLng(request.lat, request.lng)
+            )
+            String.format("%.1f km away", distanceInMeters / 1000)
+        } else { "Calculating distance..." }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Request") },
+        text = {
+            Column {
+                Text("A user is requesting a companion.")
+                Spacer(Modifier.height(8.dp))
+                Text("A destination has been set for this walk.")
+                Spacer(Modifier.height(8.dp))
+                Text("Distance from you: $distance")
+            }
+        },
+        confirmButton = { Button(onClick = onAccept) { Text("Accept") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+    )
 }
