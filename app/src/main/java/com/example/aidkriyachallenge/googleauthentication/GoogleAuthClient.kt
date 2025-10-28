@@ -57,7 +57,7 @@ class GoogleAuthClient(
             .addCredentialOption(
                 GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(context.getString(R.string.default_web_client_id)) // your web client ID
+                    .setServerClientId("861229805389-rj1v61hcs7cacfveah6j1ckiba0bfna3.apps.googleusercontent.com") // your web client ID
                     .setAutoSelectEnabled(false)
                     .build()
             )

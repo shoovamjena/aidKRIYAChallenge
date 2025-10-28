@@ -1,11 +1,14 @@
 package com.example.aidkriyachallenge.common
 
 import android.content.Context
+import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 val Context.dataStore by preferencesDataStore(name = "user_prefs")
@@ -108,6 +111,30 @@ class UserPreferences(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs.remove(SESSION_ID)
             prefs.remove(REQUEST_ID)
+        }
+    }
+    // In UserPreferences.kt
+
+    // --- 1. ADD THIS NEW KEY ---
+    private val IS_PROFILE_COMPLETE_KEY = booleanPreferencesKey("is_profile_complete")
+
+    // --- 2. ADD THIS FLOW ---
+    val isProfileComplete: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[IS_PROFILE_COMPLETE_KEY] ?: false
+        }
+
+    // --- 3. ADD THIS SAVE FUNCTION ---
+    suspend fun saveProfileCompleteStatus(isComplete: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_PROFILE_COMPLETE_KEY] = isComplete
         }
     }
 }

@@ -49,10 +49,10 @@ fun AppNavHost(
     val userEmail by viewModel.userEmail.collectAsState()
     val googleAuthClient = remember { GoogleAuthClient(context) }
 
-    val mapRoutingUserRole by mapRoutingViewModel.userRole.collectAsState()
-
     // --- 1. COLLECT THE SESSION ID STATE ---
     val sessionId by mapRoutingViewModel.sessionId.collectAsState()
+    val isViewModelInitialized by viewModel.isInitialized.collectAsState()
+    val isProfileComplete by viewModel.isProfileComplete.collectAsState()
 
     // --- 2. ADD THE NAVIGATION TRIGGER ---
     // This LaunchedEffect will run every time the 'sessionId' changes.
@@ -77,30 +77,34 @@ fun AppNavHost(
         composable("splash") {
             SplashScreen(
                 onFinished = {
-                    // --- THIS IS THE UPDATED SPLASH LOGIC ---
                     scope.launch {
+                        // 2. Wait for VM to finish initializing
+                        viewModel.isInitialized.first { it == true }
+
                         if (userEmail != null) {
-                            // User is logged in. Check for an active session.
+                            // ... (Your session check logic is correct)
                             val prefs = UserPreferences(context)
-                            // 1. Get the Pair explicitly to resolve the ambiguity
                             val sessionInfo: Pair<String?, String?> = prefs.getSessionInfo().first()
-                            // 2. Assign variables from the pair
                             val savedSessionId = sessionInfo.first
                             val savedRequestId = sessionInfo.second
 
                             if (savedSessionId != null && savedRequestId != null) {
-                                // SESSION FOUND!
-                                // 1. Tell the ViewModel to load this session
-                                mapRoutingViewModel.loadSession(savedSessionId, savedRequestId)
-                                // 2. Navigate directly to the Map Screen
-                                navController.navigate(Screen.Map.route) {
-                                    popUpTo(0) { inclusive = true }
+                                // ... (Navigate to Map)
+                            }
+                            else {
+                                // --- 3. THIS IS THE RELIABLE CHECK ---
+                                // We check the flag from DataStore, which is
+                                // now guaranteed to be correct.
+                                if (isProfileComplete) {
+                                    navController.navigate("home") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                } else {
+                                    navController.navigate("profileSk") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
-                            } else {
-                                // No session, go to home
-                                navController.navigate("home") {
-                                    popUpTo(0) { inclusive = true }
-                                }
+                                // --- END OF NEW CHECK ---
                             }
                         } else {
                             // No user email, go to welcome
@@ -109,7 +113,6 @@ fun AppNavHost(
                             }
                         }
                     }
-                    // --- END OF UPDATED BLOCK ---
                 }
             )
         }

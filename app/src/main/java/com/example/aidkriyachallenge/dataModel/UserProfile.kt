@@ -14,7 +14,11 @@ data class UserProfile(
     val isWanderer: Boolean? = null, // Wanderer or Walker
     val walkingSpeed: String = "",
     val description: String = "",
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val totalDistance: Double = 0.0,
+    val totalCalories: Int = 0,
+    val totalSteps: Int = 0,
+    val lastWalkTimestamp: Long? = null
 ){
     fun calculateAge(): Int? {
         dob?.let {
