@@ -201,35 +201,92 @@ class MyViewModel (
     fun onDescriptionChanged(value: String) { _Profilestate.update { it.copy(description = value) } }
     fun onImageChanged(value: Uri?) { _Profilestate.update { it.copy(imageUri = value) } }
 
+    // In MyViewModel.kt
+
     fun saveProfile() = viewModelScope.launch {
-        // ... (your existing code to get uid, email, role, and build the profile object)
         val uid = userId.firstOrNull() ?: return@launch
         val email = userEmail.firstOrNull() ?: ""
-        val role = userRole.firstOrNull()?:return@launch
-        var imageUrl = ""
-        val profile = UserProfile(
-            // ... (all profile fields)
-        )
+        val role = userRole.firstOrNull() ?: return@launch
+        val currentImageUri = Profilestate.value.imageUri // Get the selected image URI
 
+        // --- 1. Handle Image Upload (if necessary) ---
+        var finalImageUrl = "" // Default to empty string
+        if (currentImageUri != null && currentImageUri.toString().startsWith("content://")) {
+            // Only upload if it's a new content URI (not already a download URL)
+            Log.d("MyViewModel", "New image selected. Uploading...")
+            // Show loading state if desired
+            when (val uploadResult = repo.uploadProfileImage(uid, currentImageUri)) {
+                is ResultState.Success -> {
+                    finalImageUrl = uploadResult.data // Get the download URL
+                    Log.d("MyViewModel", "Image uploaded successfully: $finalImageUrl")
+                }
+                is ResultState.Error -> {
+                    Log.e("MyViewModel", "Image upload failed: ${uploadResult.message}")
+                    Toast.makeText(context, "Image upload failed: ${uploadResult.message}", Toast.LENGTH_LONG).show()
+                    return@launch // Stop saving if image upload fails
+                }
+                is ResultState.Loading -> {
+                    // Handled if you add loading state
+                }
+            }
+        } else if (currentImageUri != null) {
+            // It's likely an existing URL, keep it
+            finalImageUrl = currentImageUri.toString()
+            Log.d("MyViewModel", "Using existing image URL: $finalImageUrl")
+        } else {
+            Log.d("MyViewModel", "No image selected or existing.")
+        }
+        // --- End Image Handling ---
+
+
+        // --- 2. Build the Profile Object with the final URL ---
+        val profile = UserProfile(
+            uid = uid,
+            email = email,
+            createdAt = System.currentTimeMillis(), // Consider fetching existing if updating
+            username = Profilestate.value.username,
+            dob = Profilestate.value.dob,
+            gender = Profilestate.value.gender,
+            address = Profilestate.value.address,
+            walkingSpeed = Profilestate.value.walkingSpeed,
+            description = Profilestate.value.description,
+            imageUrl = finalImageUrl, // <-- Use the final URL here
+            isWanderer = role,
+            // Make sure your UserProfile includes stats if they should be saved too
+            totalDistance = Profilestate.value.totalDistance,
+            totalCalories = Profilestate.value.totalCalories,
+            totalSteps = Profilestate.value.totalSteps,
+            lastWalkTimestamp = Profilestate.value.lastWalkTimestamp
+        )
+        // --- End Profile Object ---
+
+
+        // --- 3. Save the Profile Data ---
+        Log.d("MyViewModel", "Saving profile data...")
         when (val result = repo.saveUserProfile(profile)) {
             is ResultState.Success -> {
+                Log.d("MyViewModel", "Profile saved successfully.")
                 Toast.makeText(context, result.data, Toast.LENGTH_SHORT).show()
 
-                // --- ADD THIS BLOCK ---
-                // After saving, update the DataStore flag
-                val isComplete = Profilestate.value.username.isNotBlank() &&
-                        Profilestate.value.gender.isNotBlank() &&
-                        Profilestate.value.walkingSpeed.isNotBlank()
+                // Update DataStore flag
+                val isComplete = profile.username.isNotBlank() &&
+                        profile.gender.isNotBlank() &&
+                        profile.walkingSpeed.isNotBlank()
                 userPref.saveProfileCompleteStatus(isComplete)
-                // --- END OF BLOCK ---
+
+                // Update local state's imageUri with the saved URL to prevent re-upload
+                _Profilestate.update { it.copy(imageUri = finalImageUrl.toUri()) }
+
             }
             is ResultState.Error -> {
-                Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                Log.e("MyViewModel", "Profile save failed: ${result.message}")
+                Toast.makeText(context, "Profile save failed: ${result.message}", Toast.LENGTH_LONG).show()
             }
             is ResultState.Loading -> {
                 // optional loading state
             }
         }
+        // --- End Save Profile ---
     }
 
     // In MyViewModel.kt
@@ -274,6 +331,7 @@ class MyViewModel (
             userPref.saveProfileCompleteStatus(isComplete)
         }
     }
+
 
 
 }

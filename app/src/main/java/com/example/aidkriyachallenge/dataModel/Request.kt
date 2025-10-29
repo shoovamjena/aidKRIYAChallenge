@@ -12,5 +12,7 @@ data class Request(
     val companionLat: Double? = null, // <-- ADD THIS
     val companionLng: Double? = null,
     val destLat: Double = 0.0, // <-- ADD THIS
-    val destLng: Double = 0.0
+    val destLng: Double = 0.0,
+    val walkerArrived: Boolean = false,
+    val companionArrived: Boolean = false
 )

@@ -18,6 +18,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -78,6 +79,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.dataModel.Request
 import com.example.aidkriyachallenge.dataModel.Screen
@@ -348,15 +351,21 @@ fun HomeScreen(
                 Box(
                     modifier = Modifier
                         .padding(15.dp)
-                        .size(100.dp)
+                        .size(80.dp)
                         .align(Alignment.TopEnd)
+                        .clip(CircleShape) // Make it circular
+                        .border(2.dp, Color.White, CircleShape)
                         .clickable {
                             navController.navigate("profileSk")
                         }
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.profile),
+                    AsyncImage(
+                        model = state.imageUri, // <-- Only pass the URI here
+                        error = painterResource(id = R.drawable.profile), // <-- Use 'error' for the default
+                        placeholder = painterResource(id = R.drawable.profile), // Optional: Show default while loading
                         contentDescription = "Profile Image",
+                        modifier = Modifier.fillMaxSize(), // Fill the Box
+                        contentScale = ContentScale.Crop // Crop to fit circle
                     )
                 }
                 IconButton(
@@ -367,7 +376,7 @@ fun HomeScreen(
                         }
                     },
                     modifier = Modifier
-                        .padding(top = 85.dp)
+                        .padding(top = 75.dp)
                         .padding(40.dp)
                         .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
                         .align(Alignment.TopEnd)
@@ -392,7 +401,7 @@ fun HomeScreen(
                     Text(
                         state.username,
                         fontFamily = inspDoc,
-                        fontSize = 96.sp,
+                        fontSize = 76.sp,
                         color = Color(0xFF0F790E),
                     )
                     Box(

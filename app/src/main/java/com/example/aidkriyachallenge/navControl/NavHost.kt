@@ -79,7 +79,7 @@ fun AppNavHost(
                 onFinished = {
                     scope.launch {
                         // 2. Wait for VM to finish initializing
-                        viewModel.isInitialized.first { it == true }
+                        viewModel.isInitialized.first { it }
 
                         if (userEmail != null) {
                             // ... (Your session check logic is correct)
@@ -119,7 +119,7 @@ fun AppNavHost(
         composable("welcome") {
             LaunchedEffect(state.user) {
                 if (state.user != null) {
-                    navController.navigate("home") {
+                    navController.navigate("profileSk") {
                         popUpTo(0) { inclusive = true }
                     }
                 }

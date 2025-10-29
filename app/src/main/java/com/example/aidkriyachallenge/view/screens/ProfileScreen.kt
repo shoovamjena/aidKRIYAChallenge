@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -52,12 +53,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.example.aidkriyachallenge.viewModel.MyViewModel
@@ -119,12 +122,17 @@ fun ProfileScreen(viewModel: MyViewModel,
                     Box(
                         modifier = Modifier
                             .size(100.dp)
+                            .clip(CircleShape) // Make it circular
+                            .border(2.dp, Color.White, CircleShape) // Add a border
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.profile),
+                        AsyncImage(
+                            model = state.imageUri, // <-- Only pass the URI here
+                            error = painterResource(id = R.drawable.profile), // <-- Use 'error' for the default
+                            placeholder = painterResource(id = R.drawable.profile), // Optional: Show default while loading
                             contentDescription = "Profile Image",
-
-                            )
+                            modifier = Modifier.fillMaxSize(), // Fill the Box
+                            contentScale = ContentScale.Crop // Crop to fit circle
+                        )
                     }
                     Column(
                         modifier = Modifier.fillMaxWidth()
@@ -340,6 +348,7 @@ fun ProfileScreen(viewModel: MyViewModel,
     // Dialog for editing profile
     if (showDialog) {
         Dialog(onDismissRequest = {
+            viewModel.loadProfile()
             showDialog = false
         }) {
             Surface(
@@ -361,6 +370,34 @@ fun ProfileScreen(viewModel: MyViewModel,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp) // Larger preview in dialog
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .clickable { launcher.launch("image/*") } // Click image to change
+                    ) {
+                        AsyncImage(
+                            model = state.imageUri ?: R.drawable.profile,
+                            contentDescription = "Selected Profile Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                        // Simple overlay to hint it's clickable
+                        Box(modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Black.copy(alpha = 0.3f)))
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Change Image",
+                            tint = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+
+                    Button(onClick = { launcher.launch("image/*") }) {
+                        Text("Change Profile Picture")
+                    }
 
                     // Username
                     OutlinedTextField(
@@ -493,7 +530,10 @@ fun ProfileScreen(viewModel: MyViewModel,
                             Text("Save")
                         }
                         OutlinedButton(
-                            onClick = { showDialog = false },
+                            onClick = {
+                                showDialog = false
+                                viewModel.loadProfile()
+                            },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Cancel")

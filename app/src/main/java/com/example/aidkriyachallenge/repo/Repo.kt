@@ -1,5 +1,6 @@
 package com.example.aidkriyachallenge.repo
 
+import android.net.Uri
 import android.util.Log
 import com.example.aidkriyachallenge.common.ResultState
 import com.example.aidkriyachallenge.common.WALKER_PATH
@@ -8,6 +9,7 @@ import com.example.aidkriyachallenge.dataModel.UserProfile
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 
 
@@ -157,6 +159,50 @@ class Repo(
         ResultState.Success(profile)
     } catch (e: Exception) {
         ResultState.Error(e.localizedMessage ?: "Unknown error")
+    }
+
+    suspend fun uploadProfileImage(uid: String, imageUri: Uri): ResultState<String> {
+        return try {
+            // 1. Get reference to Firebase Storage
+            val storageRef = FirebaseStorage.getInstance().reference
+
+            // 2. Define the path where the image will be stored (e.g., profile_images/userId.jpg)
+            // Using lastPathSegment ensures a unique name if the user uploads the same file twice
+            val fileExtension = getFileExtension(imageUri) // Helper function needed
+            val fileName = "$uid.$fileExtension"
+            val imageRef = storageRef.child("profile_images/$fileName")
+
+            // 3. Upload the file
+            // putFile returns an UploadTask which we can await
+            val uploadTask = imageRef.putFile(imageUri).await()
+
+            // 4. Get the download URL after successful upload
+            val downloadUrl = imageRef.downloadUrl.await()
+
+            // 5. Return success with the URL as a String
+            ResultState.Success(downloadUrl.toString())
+
+        } catch (e: Exception) {
+            // Handle potential errors (network, permissions, etc.)
+            Log.e("Repo", "Error uploading profile image: ${e.message}", e)
+            ResultState.Error("Image upload failed: ${e.message ?: "Unknown error"}")
+        }
+    }
+
+    // --- ADD THIS HELPER FUNCTION ---
+    /**
+     * Helper function to try and determine the file extension from a URI.
+     * Needs ContentResolver, you might need to pass context to Repo or get it differently.
+     * This is a basic implementation; more robust handling might be needed.
+     */
+    private fun getFileExtension(uri: Uri): String {
+        // Example using context if you pass it to Repo:
+        // val contentResolver = context.contentResolver
+        // val mimeTypeMap = MimeTypeMap.getSingleton()
+        // return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri)) ?: "jpg"
+
+        // Simpler fallback if context isn't available:
+        return uri.lastPathSegment?.substringAfterLast('.', "jpg") ?: "jpg"
     }
 
 

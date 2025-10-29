@@ -237,5 +237,17 @@ class RealtimeRepo(
     fun confirmWalkingSession(sessionId: String) {
         db.child("sessions").child(sessionId).child("status").setValue("walking")
     }
+    // In your Repo.kt file
+
+    fun updateSessionStatus(sessionId: String, status: String, onComplete: () -> Unit) {
+        db.child("requests").child(sessionId).child("status").setValue(status)
+            .addOnSuccessListener { onComplete() }
+    }
+
+    fun markArrived(sessionId: String, isWalker: Boolean) {
+        val key = if (isWalker) "walkerArrived" else "companionArrived"
+        // We add these flags to the session/request object
+        db.child("requests").child(sessionId).child(key).setValue(true)
+    }
 
 }

@@ -24,9 +24,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.aidkriyachallenge" />
-                  <option name="mobileSdkAppId" value="1:454059164837:android:63d25d624790c37fea794c" />
-                  <option name="projectId" value="adikriyawalker" />
-                  <option name="projectNumber" value="454059164837" />
+                  <option name="mobileSdkAppId" value="1:861229805389:android:1a5275ddbad214356cd104" />
+                  <option name="projectId" value="aidkriya-35b8f" />
+                  <option name="projectNumber" value="861229805389" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
