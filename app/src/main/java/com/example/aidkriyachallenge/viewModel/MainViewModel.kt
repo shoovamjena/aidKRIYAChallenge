@@ -204,17 +204,24 @@ class MainViewModel(
         repo.value?.registerUser(role)
     }
 
-    fun raiseCall(destination: LatLng) {
+    // In MainViewModel.kt
+
+    fun raiseCall(destination: LatLng, walkerName: String, imageUrl: android.net.Uri?) {
         viewModelScope.launch {
             val repo = _repo.value ?: return@launch
             try {
                 val locationClient = LocationClient(context)
                 val location = locationClient.getLocationUpdates(0L).first()
+
                 repo.raiseCall(
-                    location.latitude,
-                    location.longitude,
-                    destination.latitude,
-                    destination.longitude
+                    latitude = location.latitude,
+                    longitude = location.longitude,
+                    destLat = destination.latitude,
+                    destLng = destination.longitude,
+                    walkerName = walkerName,
+                    // This is 100% correct.
+                    // It converts the https://... Uri into a String?
+                    profileImageUrl = imageUrl?.toString(),
                 ) { newRequestId ->
                     listenToActiveRequest(newRequestId)
                 }

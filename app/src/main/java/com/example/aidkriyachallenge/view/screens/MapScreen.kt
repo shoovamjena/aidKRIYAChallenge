@@ -49,10 +49,13 @@ import kotlinx.coroutines.launch
 import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
 
 import androidx.compose.material3.*
@@ -61,8 +64,15 @@ import androidx.compose.ui.draw.clip
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import com.example.aidkriyachallenge.R
+import com.example.aidkriyachallenge.dataModel.Request
 import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import coil.request.ImageRequest
 
 
 @Composable
@@ -137,7 +147,7 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
     when {
         // Case 1: All permissions granted, show the map.
         allPermissionsGranted -> {
-            val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+            val lifecycleOwner = LocalLifecycleOwner.current
             val locationClient = remember { LocationClient(context) }
 
             // --- SIDE EFFECTS ---
@@ -176,15 +186,38 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                     cameraPositionState = cameraPositionState,
                     properties = mapProperties
                 ) {
-                    // Draw markers for Walker and Companion
+
+                    // --- MARKER LOGIC UPDATED ---
                     locations.forEach { (id, latLng) ->
-                        val title = when (id) {
-                            activeRequest?.walkerId -> "Walker"
-                            activeRequest?.companionId -> "Companion"
-                            else -> "User"
+                        val position = LatLng(latLng.first, latLng.second)
+
+                        when (id) {
+                            activeRequest?.walkerId -> {
+                                // Use the custom composable marker for the Walker
+                                MarkerComposable(
+                                    state = MarkerState(position = position)
+                                ) {
+                                    // We pass the whole request so WalkerMapMarker
+                                    // can get the profileImageUrl from it
+                                    activeRequest?.let { WalkerMapMarker(request = it) }
+                                }
+                            }
+                            activeRequest?.companionId -> {
+                                // Use a green default marker for the Companion
+                                Marker(
+                                    state = MarkerState(position = position),
+                                    title = "Companion",
+                                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                                )
+                            }
+                            else -> {
+                                // Fallback just in case
+                                Marker(state = MarkerState(position = position), title = "User")
+                            }
                         }
-                        Marker(state = MarkerState(position = LatLng(latLng.first, latLng.second)), title = title)
                     }
+                    // --- END OF UPDATED MARKER LOGIC ---
+
                     // Draw marker for the final destination
                     activeRequest?.let { request ->
                         if (request.destLat != 0.0 && request.destLng != 0.0) {
@@ -288,5 +321,49 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                 Text(text = "Location permission is required to use the map feature.")
             }
         }
+    }
+}
+
+// --- ADD THIS COMPOSABLE TO THE END OF YOUR FILE ---
+// (Copied from HomeScreen)
+
+// In /view/screens/MapScreen.kt
+
+@Composable
+private fun WalkerMapMarker(request: Request) {
+    val context = LocalContext.current // Get the context
+
+    // --- THIS IS THE FIX ---
+    // We build a custom request to pass to AsyncImage
+    val imageRequest = ImageRequest.Builder(context)
+        .data(request.profileImageUrl) // The URL
+        .placeholder(R.drawable.profile)
+        .error(R.drawable.profile)
+        .allowHardware(false) // <-- This is the key to fix the crash
+        .build()
+    // --- END OF FIX ---
+
+    Box(
+        modifier = Modifier.size(56.dp), // Total size of the marker
+        contentAlignment = Alignment.TopCenter // Aligns the AsyncImage to the top
+    ) {
+        // 1. The background teardrop pin
+        Icon(
+            imageVector = Icons.Default.Place, // Built-in material icon
+            contentDescription = "Map Pin",
+            modifier = Modifier.fillMaxSize(),
+            tint = MaterialTheme.colorScheme.primary // Tint it to your app's theme
+        )
+        // 2. The circular profile image
+        AsyncImage(
+            model = imageRequest, // <-- Pass the custom request here
+            contentDescription = "Walker Profile",
+            modifier = Modifier
+                .padding(top = 4.dp) // Adjust padding to center it nicely
+                .size(36.dp) // Size of the circular image
+                .clip(CircleShape)
+                .border(1.dp, Color.White, CircleShape), // Optional white border
+            contentScale = ContentScale.Crop
+        )
     }
 }

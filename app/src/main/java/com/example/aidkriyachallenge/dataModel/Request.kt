@@ -1,5 +1,7 @@
 package com.example.aidkriyachallenge.dataModel
 
+import android.net.Uri
+
 data class Request(
     val id: String = "",
     val walkerId: String = "",
@@ -14,5 +16,7 @@ data class Request(
     val destLat: Double = 0.0, // <-- ADD THIS
     val destLng: Double = 0.0,
     val walkerArrived: Boolean = false,
-    val companionArrived: Boolean = false
+    val companionArrived: Boolean = false,
+    val profileImageUrl: String? = null,
+    val walkerName: String? = null,
 )

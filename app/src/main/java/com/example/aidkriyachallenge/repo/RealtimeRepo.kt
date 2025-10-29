@@ -32,38 +32,46 @@ class RealtimeRepo(
         db.child("users").child(currentUserId).setValue(user)
     }
 
+    // In RealtimeRepo.kt
+
+    // In RealtimeRepo.kt
+
     fun raiseCall(
-        lat: Double,
-        lng: Double,
+        latitude: Double,
+        longitude: Double,
         destLat: Double,
         destLng: Double,
+        walkerName: String,
+        profileImageUrl: String?, // Receives the String? from ViewModel
         onSuccess: (requestId: String) -> Unit
     ) {
         val requestRef = db.child("requests").push()
         val requestId = requestRef.key ?: return
+
+        // --- THIS IS THE FIX (from your saveProfile) ---
+        // Convert a null URL to an empty string.
+        val finalUrl = profileImageUrl ?: ""
 
         val request = mapOf(
             "walkerId" to currentUserId,
             "companionId" to null,
             "status" to "pending",
             "createdAt" to ServerValue.TIMESTAMP,
-            "lat" to lat,
-            "lng" to lng,
+            "lat" to latitude,
+            "lng" to longitude,
             "destLat" to destLat,
-            "destLng" to destLng
+            "destLng" to destLng,
+            "walkerName" to walkerName,
+            "profileImageUrl" to finalUrl // This is now safe (it's "" not null)
         )
 
+        // This will no longer crash.
         requestRef.setValue(request)
             .addOnSuccessListener {
-                // --- THIS IS THE NEW LOGIC ---
-                // Set the "last will": if the app disconnects, remove this request
                 requestRef.onDisconnect().removeValue()
-                // --- END OF NEW LOGIC ---
-
                 onSuccess(requestId)
             }
     }
-
     fun acceptCall(requestId: String, lat: Double, lng: Double, onComplete: () -> Unit) {
         val updates = mapOf(
             "/requests/$requestId/companionId" to currentUserId,

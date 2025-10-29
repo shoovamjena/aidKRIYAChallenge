@@ -8,6 +8,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -16,7 +17,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.StackedLineChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -104,6 +105,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerComposable
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -144,7 +146,7 @@ private fun formatLastWalk(timestamp: Long?): String {
     }
 }
 
-@SuppressLint("DefaultLocale")
+@SuppressLint("DefaultLocale", "UnrememberedMutableState")
 @Composable
 fun HomeScreen(
     viewModel: MyViewModel,
@@ -218,8 +220,14 @@ fun HomeScreen(
     LaunchedEffect(destinationLocation) {
         destinationLocation?.let { dest ->
             Log.d("HomeScreen", "Got destination: $dest. Calling raiseCall...")
-            mapRoutingViewModel.raiseCall(dest)
-            // Clear the result so it doesn't trigger again
+
+            // --- YOU ARE RIGHT: Pass the Uri object ---
+            mapRoutingViewModel.raiseCall(
+                destination = dest,
+                walkerName = state.username,
+                imageUrl = state.imageUri // <-- Pass the Uri? object
+            )
+
             backStackEntry?.savedStateHandle?.remove<LatLng>("destination_location")
         }
     }
@@ -457,7 +465,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .shadow(5.dp, RoundedCornerShape(15))
                     .clip(RoundedCornerShape(15))
-                    .weight(0.1f) // Fills remaining vertical space
+                    .weight(1f) // Fills remaining vertical space
                     .fillMaxWidth(0.9f)
 
             ) {
@@ -490,15 +498,22 @@ fun HomeScreen(
                             )
                             val distanceText = String.format("%.1f km", distanceInMeters / 1000)
 
-                            Marker(
-                                state = MarkerState(position = LatLng(request.lat, request.lng)),
-                                title = distanceText, // <-- 1. SHOWS DISTANCE
+                            // --- THIS IS THE FIX ---
+                            // Change 'Marker' to 'MarkerComposable'
+                            MarkerComposable(
+                                state = MarkerState(position = LatLng(request.lat, request.lng)), // This is correct
+                                title = distanceText,
                                 snippet = "Click for details",
-                                onClick = {
+                                onClick = { marker ->
                                     mapRoutingViewModel.onMarkerClick(request)
                                     true // Consume the click event
-                                }
-                            )
+                                },
+                                // 'content' is NOT a parameter here,
+                                // it's a trailing lambda, just like you had it.
+                            ) {
+                                // This composable content now works!
+                                WalkerMapMarker(request)
+                            }
                         }
                     }
                     // --- NEW: Show destination marker if a request is selected ---
@@ -547,14 +562,14 @@ fun HomeScreen(
 
                         // --- B. SHOW INFO CARD ---
                         WalkerInfoCard(
-                            request = currentRequest,
+                            request = currentRequest, // <-- Pass the whole request
                             currentUserLocation = currentUserLocation,
                             onAccept = {
                                 // 1. Show the Toast
                                 Toast.makeText(
                                     context,
                                     "Walking interest sent to the wanderer \n They may accept or reject it",
-                                    Toast.LENGTH_SHORT
+                                    Toast.LENGTH_LONG
                                 ).show()
                                 // 2. Tell the VM to send interest
                                 mapRoutingViewModel.sendInterestToWalker(currentRequest.id)
@@ -594,17 +609,18 @@ fun HomeScreen(
 
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .heightIn(min = 56.dp),
-                contentAlignment = Alignment.Center
-            ) {
+
                 when (mapRoutingUserRole) {
                     "Walker" -> {
                         // --- Walker Flow UI ---
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                                .windowInsetsPadding(WindowInsets.navigationBars)
+                                .heightIn(min = 56.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                         WalkerFlowUI(
                             activeRequest = activeRequest,
                             sessionId = sessionId,
@@ -623,17 +639,6 @@ fun HomeScreen(
                                 )
                             }
                         )
-                    }
-
-                    "Companion" -> {
-                        // --- Companion Flow UI (is just the map, so show nothing here) ---
-                        // Or you could show a status text
-                        Text("Ready to accept requests")
-                    }
-
-                    else -> {
-                        // --- Loading Role ---
-                        CircularProgressIndicator()
                     }
                 }
             }
@@ -699,14 +704,23 @@ private fun WalkerFlowUI(
             // You can't put a map in this small box.
             // Let's just show the CARD part.
 
-            val distance = remember(activeRequest, currentUserLocation) {
-                if (activeRequest.companionLat != null) {
-                    val d = SphericalUtil.computeDistanceBetween(
-                        LatLng(activeRequest.lat, activeRequest.lng),
-                        activeRequest.companionLng?.let { LatLng(activeRequest.companionLat, it) }
-                    )
+            val distance = remember(activeRequest) {
+                // Check if all required fields are present
+                if (activeRequest.companionLat != null && activeRequest.companionLng != null) {
+
+                    // Create LatLng objects safely
+                    val walkerLatLng = LatLng(activeRequest.lat, activeRequest.lng)
+                    val companionLatLng = LatLng(activeRequest.companionLat, activeRequest.companionLng)
+
+                    // Calculate distance (this is now guaranteed to be a non-null Double)
+                    val d = SphericalUtil.computeDistanceBetween(walkerLatLng, companionLatLng)
+
+                    // Format the string
                     String.format("%.1f km away", d / 1000)
-                } else "..."
+                } else {
+                    // Fallback text if companion location is incomplete
+                    "..."
+                }
             }
 
             Card(
@@ -782,7 +796,7 @@ private fun StatCard(item: StatItem) {
 @SuppressLint("DefaultLocale")
 @Composable
 private fun WalkerInfoCard(
-    request: Request,
+    request: Request, // <-- Pass the whole request object
     currentUserLocation: Location?,
     onAccept: () -> Unit,
     onDismiss: () -> Unit,
@@ -822,15 +836,32 @@ private fun WalkerInfoCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // --- NEW: Walker Profile Image ---
+            AsyncImage(
+                model = request.profileImageUrl, // <-- Use image URL from request
+                error = painterResource(id = R.drawable.profile), // <-- Default image
+                placeholder = painterResource(id = R.drawable.profile),
+                contentDescription = "Walker Profile",
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
             // --- Walker Profile Info ---
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = "Walker Request", // TODO: Replace with request.walkerName
-                    style = MaterialTheme.typography.titleLarge
-                )
+                request.walkerName?.let {
+                    Text(
+                        text = it, // <-- Use name from request
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
                 Text(
                     text = distance, // This is Companion -> Walker
                     style = MaterialTheme.typography.bodyMedium,
@@ -849,15 +880,15 @@ private fun WalkerInfoCard(
 
                 // --- TODO: Populate this from your Request object ---
                 Text(
-                    text = "Gender: N/A",
+                    text = "Gender: N/A", // <-- Replace with request.gender
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "Speed: N/A",
+                    text = "Speed: N/A", // <-- Replace with request.speed
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = "Rating: ☆ 0.0",
+                    text = "Rating: ☆ 0.0", // <-- Replace with request.rating
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -887,6 +918,41 @@ private fun WalkerInfoCard(
                 }
             }
         }
+    }
+}
+
+// --- ADD THIS NEW COMPOSABLE TO HomeScreen.kt ---
+/**
+ * A custom composable for the map marker.
+ * It displays a teardrop pin icon tinted with the primary color,
+ * and overlays the walker's circular profile image on top.
+ */
+@Composable
+private fun WalkerMapMarker(request: Request) {
+    Box(
+        modifier = Modifier.size(56.dp), // Total size of the marker
+        contentAlignment = Alignment.TopCenter // Aligns the AsyncImage to the top
+    ) {
+        // 1. The background teardrop pin
+        Icon(
+            imageVector = Icons.Default.Place, // Built-in material icon
+            contentDescription = "Map Pin",
+            modifier = Modifier.fillMaxSize(),
+            tint = MaterialTheme.colorScheme.primary // Tint it to your app's theme
+        )
+        // 2. The circular profile image
+        AsyncImage(
+            model = request.profileImageUrl,
+            error = painterResource(id = R.drawable.profile), // Default image
+            placeholder = painterResource(id = R.drawable.profile),
+            contentDescription = "Walker Profile",
+            modifier = Modifier
+                .padding(top = 4.dp) // Adjust padding to center it nicely
+                .size(36.dp) // Size of the circular image
+                .clip(CircleShape)
+                .border(1.dp, Color.White, CircleShape), // Optional white border
+            contentScale = ContentScale.Crop
+        )
     }
 }
 

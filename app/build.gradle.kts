@@ -62,11 +62,14 @@ dependencies {
     implementation(libs.androidx.compose.material3.windowSizeClass)
 
     // --- Firebase (Import BOM, then declare without versions) ---
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.database.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.storage.ktx)
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+
+    // Add the dependencies for the Firebase products you want to use
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.firebase:firebase-common")
+
 
     // --- Google Maps & Location ---
     implementation(libs.google.playServices.maps)
@@ -74,6 +77,7 @@ dependencies {
     implementation(libs.google.maps.compose)
     implementation(libs.google.places)
     implementation(libs.google.maps.utils)
+    implementation(libs.maps.compose.utils)
 
     // --- Credentials & Google ID ---
     implementation(libs.androidx.credentials)
@@ -93,6 +97,8 @@ dependencies {
     implementation(libs.androidx.splashscreen)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
 
     // --- Testing ---
     testImplementation(libs.junit)

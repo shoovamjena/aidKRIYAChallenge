@@ -1,50 +1,57 @@
 [versions]
 # Android & Kotlin
-agp = "8.12.2"
-kotlin = "2.0.21"
+agp = "8.13.0"
+kotlin = "2.2.21"
 coreKtx = "1.17.0" # Example, use your actual version from build.gradle.kts if different
-lifecycleRuntimeKtx = "2.9.3"
-activityCompose = "1.10.1"
-activityKtx = "1.9.0"
-lifecycleRuntimeCompose = "2.8.3" # Added
-androidxWindow = "1.4.0"
+lifecycleRuntimeKtx = "2.9.4"
+activityCompose = "1.11.0"
+activityKtx = "1.11.0"
+lifecycleRuntimeCompose = "2.9.4" # Added
+androidxWindow = "1.5.0"
 androidxSplashscreen = "1.0.1"
 androidxDatastorePrefs = "1.1.7" # Check if 1.1.1 is intended
-androidxNavigationCompose = "2.7.7"
+androidxNavigationCompose = "2.9.5"
 
 # Compose
-firebaseBom = "33.1.1"
-composeBom = "2024.09.00"
+firebaseBom = "34.4.0"
+composeBom = "2025.10.01"
+mapsComposeUtils = "6.12.1"
 materialIconsExtended = "1.7.8" # Example, use your actual version
-adaptive = "1.0.0"
-material3WindowSizeClass = "1.3.2" # Example, use your actual version
+adaptive = "1.2.0"
+material3WindowSizeClass = "1.4.0" # Example, use your actual version
 material3Expressive = "1.5.0-alpha06"
 firebaseDatabase = "22.0.1"
 
 # Firebase (BOM version managed in build.gradle.kts)
 
-googleGmsGoogleServices = "4.4.3"
+googleGmsGoogleServices = "4.4.4"
 
 # Google Services & Maps
-googlePlayServicesMaps = "18.2.0"
+googlePlayServicesMaps = "19.2.0"
 googlePlayServicesLocation = "21.3.0"
-googleMapsCompose = "4.4.1"
-googlePlaces = "3.5.0"
-googleMapsUtils = "2.3.0"
+googleMapsCompose = "6.12.1"
+googlePlaces = "5.0.0"
+googleMapsUtils = "3.19.0"
 credentials = "1.5.0" # Example, use your actual version
 googleid = "1.1.1"
 
 # Networking & Serialization
-retrofit = "2.9.0"
-kotlinxSerializationJson = "1.7.1" # Example, use your actual version
+retrofit = "3.0.0"
+kotlinxSerializationJson = "1.9.0" # Example, use your actual version
 
 # UI Utilities
-airbnbLottieCompose = "4.0.0"
+airbnbLottieCompose = "6.6.10"
 
 # Testing
 junit = "4.13.2"
 androidxJunit = "1.3.0" # Renamed from junitVersion for clarity
-androidxEspressoCore = "3.7.0" # Renamed from espressoCore
+androidxEspressoCore = "3.7.0"
+firebaseAuthKtx = "24.0.1"
+firebaseDatabaseKtx = "22.0.1"
+firebaseCommonKtx = "22.0.1"
+firebaseAuth = "24.0.1"
+firebaseFirestore = "26.0.2"
+firebaseStorage = "22.0.1" # Renamed from espressoCore
 
 [libraries]
 # AndroidX Core & Lifecycle
@@ -94,6 +101,7 @@ google-places = { group = "com.google.android.libraries.places", name = "places"
 google-maps-utils = { group = "com.google.maps.android", name = "android-maps-utils", version.ref = "googleMapsUtils" }
 
 # Retrofit
+maps-compose-utils = { module = "com.google.maps.android:maps-compose-utils", version.ref = "mapsComposeUtils" }
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converterGson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 
@@ -108,7 +116,13 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxEspressoCore" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" } # Version from Compose BOM
-androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" } # Version from Compose BOM
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+google-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+google-firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
+firebase-common-ktx = { group = "com.google.firebase", name = "firebase-common-ktx", version.ref = "firebaseCommonKtx" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" } # Version from Compose BOM
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
