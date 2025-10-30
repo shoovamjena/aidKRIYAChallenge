@@ -5,6 +5,7 @@ import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,19 @@ class UserPreferences(private val context: Context) {
     private val IS_WANDERER = booleanPreferencesKey("wanderer_or_walker")
     private val SESSION_ID = stringPreferencesKey("session_id")
     private val REQUEST_ID = stringPreferencesKey("request_id")
+
+    private val TOTAL_EARNINGS_KEY = longPreferencesKey("total_earnings_paise")
+
+    val totalEarnings: Flow<Long> = context.dataStore.data
+        .map { preferences ->
+            preferences[TOTAL_EARNINGS_KEY] ?: 0L // Default to 0
+        }
+
+    suspend fun saveTotalEarnings(earningsInPaise: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[TOTAL_EARNINGS_KEY] = earningsInPaise
+        }
+    }
 
     suspend fun saveUserEmail(email: String) {
         context.dataStore.edit { prefs ->

@@ -23,6 +23,7 @@ import com.example.aidkriyachallenge.googleauthentication.GoogleAuthClient
 import com.example.aidkriyachallenge.view.screens.DestinationSelectionScreen
 import com.example.aidkriyachallenge.view.screens.HomeScreen
 import com.example.aidkriyachallenge.view.screens.MapScreen
+import com.example.aidkriyachallenge.view.screens.PaymentScreen
 import com.example.aidkriyachallenge.view.screens.ProfileScreen
 import com.example.aidkriyachallenge.view.screens.SplashScreen
 import com.example.aidkriyachallenge.view.screens.WelcomeScreen
@@ -33,6 +34,8 @@ import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
+
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
@@ -53,6 +56,7 @@ fun AppNavHost(
     val sessionId by mapRoutingViewModel.sessionId.collectAsState()
     val isViewModelInitialized by viewModel.isInitialized.collectAsState()
     val isProfileComplete by viewModel.isProfileComplete.collectAsState()
+
 
     // --- 2. ADD THE NAVIGATION TRIGGER ---
     // This LaunchedEffect will run every time the 'sessionId' changes.
@@ -198,5 +202,23 @@ fun AppNavHost(
                 navController = navController
             )
         }
+        composable(
+            route = Screen.Payment.route,
+            arguments = listOf(
+                navArgument("distanceInMeters") { type = NavType.IntType },
+                navArgument("amountInPaise") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val distance = backStackEntry.arguments?.getInt("distanceInMeters") ?: 0
+            val amount = backStackEntry.arguments?.getInt("amountInPaise") ?: 0
+
+            PaymentScreen(
+                viewModel = mapRoutingViewModel,
+                navController = navController,
+                distanceInMeters = distance,
+                amountInPaise = amount
+            )
+        }
+
     }
 }

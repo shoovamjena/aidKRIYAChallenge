@@ -19,22 +19,47 @@ import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.maps.android.SphericalUtil
+import com.razorpay.PaymentData
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+
 
 class MainViewModel(
     @SuppressLint("StaticFieldLeak") private val context: Context
 ) : ViewModel() {
+
+    sealed class PaymentResult {
+        data class Success(
+            val companionEarningsPaise: Int
+        ) : PaymentResult()
+
+        data class Error(val description: String) : PaymentResult()
+    }
+
+    private val userPreferences = UserPreferences(context)
+    private val _totalEarnings = MutableStateFlow(0L) // Stored in paise
+    val totalEarnings = _totalEarnings.asStateFlow()
+
+    private val _showEarningsReceivedDialog = MutableStateFlow<Long?>(null) // Holds the amount earned
+    val showEarningsReceivedDialog = _showEarningsReceivedDialog.asStateFlow()
 
     // --- State Properties Exposed to the UI ---
     private val _repo = MutableStateFlow<RealtimeRepo?>(null)
@@ -75,6 +100,13 @@ class MainViewModel(
 
     private val _pendingCompanionInterests = MutableStateFlow<Set<String>>(emptySet())
     val pendingCompanionInterests: StateFlow<Set<String>> = _pendingCompanionInterests.asStateFlow()
+
+    // --- PAYMENT FLOW STATE ---
+    private val _navigateToPayment = MutableStateFlow<Pair<Int, Int>?>(null)
+    val navigateToPayment: StateFlow<Pair<Int, Int>?> = _navigateToPayment.asStateFlow()
+
+    private val _paymentResult = MutableSharedFlow<PaymentResult>()
+    val paymentResult: SharedFlow<PaymentResult> = _paymentResult.asSharedFlow()
 
     fun sendInterestToWalker(requestId: String) {
         viewModelScope.launch {
@@ -141,6 +173,35 @@ class MainViewModel(
             }
         }
     }
+    private fun listenToUserWallet(userId: String) {
+        dbReference.child("users").child(userId).child("walletBalance")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val newBalance = snapshot.getValue(Long::class.java) ?: 0L
+
+                    // Get the *current* balance from our state (which came from DataStore)
+                    val currentBalance = _totalEarnings.value
+
+                    if (newBalance > currentBalance) {
+                        // We just got paid!
+                        val amountEarned = newBalance - currentBalance
+
+                        // Trigger the dialog
+                        _showEarningsReceivedDialog.value = amountEarned
+                    }
+
+                    // Save the new *total* balance to DataStore
+                    viewModelScope.launch {
+                        userPreferences.saveTotalEarnings(newBalance)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.w("ViewModel", "Wallet listener cancelled: ${error.message}")
+                }
+            })
+    }
+
 
     var currentUserId: String? = null
         private set
@@ -155,6 +216,9 @@ class MainViewModel(
     init {
         observeRequestChanges() // Start the smart observer
         observeActiveRequestForCancellations() // Start the cancellation observer
+        userPreferences.totalEarnings
+            .onEach { earnings -> _totalEarnings.value = earnings }
+            .launchIn(viewModelScope)
         viewModelScope.launch {
             // 1. Get user ID from Firebase Auth
             val userPrefs = UserPreferences(context)
@@ -194,9 +258,14 @@ class MainViewModel(
                 Log.e("MainViewModel", "User role not found in Firestore.")
                 // Optionally emit an error state
             }
+            if (role == "Companion") {
+                listenToUserWallet(userId)
+            }
         }
     }
-
+    fun dismissEarningsDialog() {
+        _showEarningsReceivedDialog.value = null
+    }
 
     // --- Public Functions for the UI ---
 
@@ -374,7 +443,7 @@ class MainViewModel(
         }
     }
 
-    fun endSession() {
+    private fun completeSessionCleanup() {
         val sessionToEnd = _sessionId.value
         val requestInfo = _activeRequest.value
 
@@ -401,9 +470,129 @@ class MainViewModel(
                 _isCloseEnoughToStartWalk.value = false
             }
         } else {
-            Log.e("MainViewModel", "endSession called but session or request info is missing.")
+            Log.e("MainViewModel", "completeSessionCleanup called but session or request info is missing.")
         }
     }
+    fun endSession(isWalker: Boolean) {
+        val currentSessionId = _sessionId.value ?: return
+
+        if (isWalker) {
+            // Walker is ending to get paid
+            // 1. SET STATUS TO PENDING IN FIREBASE
+            // This will trigger the dialog for the Companion
+            repo.value?.updateSessionStatus(currentSessionId, "payment_pending")
+
+            // 2. Calculate distance...
+            val distanceInMeters = calculateTotalDistance(_routePoints.value)
+            val amountInPaise = ((distanceInMeters / 1000.0) * 10.0 * 100).toInt()
+
+            // 3. Trigger navigation (for Walker)
+            if (amountInPaise > 100) {
+                _navigateToPayment.value = Pair(distanceInMeters.toInt(), amountInPaise)
+            } else {
+                Log.d("MainViewModel", "Distance too short, skipping payment.")
+                // Not enough to charge, just end the session normally
+                completeSessionCleanup()
+            }
+        } else {
+            // Companion is ending early (this is a "cancel" action)
+            Log.d("MainViewModel", "Companion ended session early.")
+            // This will end the session for everyone, skipping payment
+            completeSessionCleanup()
+        }
+    }
+
+
+    private fun calculateTotalDistance(points: List<LatLng>): Double {
+        var totalDistance = 0.0
+        if (points.size > 1) {
+            for (i in 0 until points.size - 1) {
+                totalDistance += SphericalUtil.computeDistanceBetween(points[i], points[i + 1])
+            }
+        }
+        return totalDistance // Returns distance in meters
+    }
+
+    fun onPaymentNavigationComplete() {
+        _navigateToPayment.value = null
+    }
+
+
+    fun onPaymentSuccess(
+        paymentId: String?,
+        paymentData: PaymentData?,
+        totalAmountInPaise: Int // <-- This is the new parameter from MainActivity
+    ) {
+        viewModelScope.launch {
+            Log.d("ViewModel", "Payment Successful: $paymentId")
+
+            var companionSharePaise = 0L // Changed to Long
+
+            try {
+                val companionId = _activeRequest.value?.companionId
+                // Use the reliable parameter, not paymentData
+                val totalAmountPaise = totalAmountInPaise.toLong()
+
+                if (companionId != null && totalAmountPaise > 0) {
+                    companionSharePaise = (totalAmountPaise * 0.8).toLong() // Calculate as Long
+                    updateCompanionWallet(companionId, companionSharePaise)
+                }
+            } catch (e: Exception) {
+                Log.e("ViewModel", "Error processing wallet update: ${e.message}")
+            }
+
+            // Emit the new, simpler Success object
+            _paymentResult.emit(
+                PaymentResult.Success(companionSharePaise.toInt())
+            )
+        }
+        completeSessionCleanup()
+    }
+
+    // <<< 3. MODIFIED THIS FUNCTION >>>
+    fun onPaymentError(code: Int, description: String?, paymentData: PaymentData?) {
+        viewModelScope.launch {
+            // Emit the new, simpler Error object
+            _paymentResult.emit(
+                PaymentResult.Error(description ?: "Unknown payment error (code: $code)")
+            )
+        }
+    }
+
+    private fun updateCompanionWallet(companionId: String, amountPaiseToAdd: Long) { // Changed to Long
+        val amountRupees = "%.2f".format(amountPaiseToAdd / 100.0)
+        Log.d("ViewModel_Wallet", "**********************************************")
+        Log.d("ViewModel_Wallet", "ATTEMPTING: Adding ₹$amountRupees to wallet of user $companionId")
+        Log.d("ViewModel_Wallet", "**********************************************")
+
+        // --- This is the new, real code ---
+        // It finds the companion's wallet and securely adds the new amount.
+        val companionWalletRef = dbReference.child("users").child(companionId).child("walletBalance")
+
+        companionWalletRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(currentData: MutableData): Transaction.Result {
+                val currentBalance = currentData.getValue(Long::class.java) ?: 0L
+                val newBalance = currentBalance + amountPaiseToAdd
+                currentData.value = newBalance
+                return Transaction.success(currentData)
+            }
+
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                data: DataSnapshot?
+            ) {
+                if (committed) {
+                    Log.d("ViewModel_Wallet", "SUCCESS: Wallet transaction complete. New balance: ${data?.value}")
+                } else {
+                    Log.e("ViewModel_Wallet", "FAILURE: Wallet transaction failed: ${error?.message}")
+                }
+            }
+        })
+    }
+
+    // --- END OF NEW PAYMENT FLOW FUNCTIONS ---
+
 
     fun startLocationUpdates() {
         locationUpdateJob?.cancel()

@@ -41,6 +41,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Check
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -167,6 +169,26 @@ fun HomeScreen(
 
     val radiusOptions = listOf(1000, 2000, 5000) // in meters
     var selectedRadius by remember { mutableIntStateOf(radiusOptions.first()) }
+
+    val totalEarnings by mapRoutingViewModel.totalEarnings.collectAsState()
+    val earningsToShow by mapRoutingViewModel.showEarningsReceivedDialog.collectAsState()
+
+    if (earningsToShow != null) {
+        val earningsInRupees = "%.2f".format(earningsToShow!! / 100.0)
+
+        AlertDialog(
+            onDismissRequest = { mapRoutingViewModel.dismissEarningsDialog() },
+            title = { Text("You Got Paid!") },
+            text = {
+                Text("A recent walking session just completed. You've earned ₹$earningsInRupees!")
+            },
+            confirmButton = {
+                Button(onClick = { mapRoutingViewModel.dismissEarningsDialog() }) {
+                    Text("Awesome!")
+                }
+            }
+        )
+    }
 
     val stats = remember(state) {
         listOf(
@@ -412,29 +434,59 @@ fun HomeScreen(
                         fontSize = 76.sp,
                         color = Color(0xFF0F790E),
                     )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .align(Alignment.CenterHorizontally)
-                            .padding(vertical = 10.dp)
-                            .height(50.dp)
-                            .clickable {
-                                navController.navigate("ReviewSeen")
-                            }
-                            .innerShadow(
-                                shape = RoundedCornerShape(50),
-                                shadow = Shadow(
-                                    radius = 25.dp,
-                                    Color.White
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Text(
-                            "SEE REVIEWS",
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.surface
-                        )
+                        Box(
+                            modifier = Modifier
+
+                                .height(50.dp)
+                                .clickable {
+                                    navController.navigate("ReviewSeen")
+                                }
+                                .innerShadow(
+                                    shape = RoundedCornerShape(50),
+                                    shadow = Shadow(
+                                        radius = 25.dp,
+                                        Color.White
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "SEE REVIEWS",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.surface,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .height(50.dp)
+                                .innerShadow(
+                                    shape = RoundedCornerShape(50),
+                                    shadow = Shadow(
+                                        radius = 25.dp,
+                                        Color.White
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+
+                            val totalInRupees = "%.2f".format(totalEarnings / 100.0)
+                            Text(
+                                "Earnings: ₹$totalInRupees",
+                                fontFamily = odin,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(
+                                    maxFontSize = 18.sp
+                                ),
+                                modifier = Modifier.padding(10.dp)
+                            )
+
+                        }
                     }
                 }
 

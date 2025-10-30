@@ -73,6 +73,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import coil.request.ImageRequest
+import com.example.aidkriyachallenge.dataModel.Screen
 
 
 @Composable
@@ -144,6 +145,25 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
     // --- UI ---
     val allPermissionsGranted = hasFineLocationPermission && hasBackgroundLocationPermission
 
+    val navigateToPayment by viewModel.navigateToPayment.collectAsState()
+
+    LaunchedEffect(navigateToPayment) {
+        navigateToPayment?.let { (distance, amount) ->
+            // Navigate to Payment screen
+            navController.navigate(Screen.Payment.createRoute(distance, amount))
+            viewModel.onPaymentNavigationComplete() // Reset the trigger
+        }
+    }
+
+    LaunchedEffect(sessionId) {
+        if (sessionId == null) {
+            // Session is truly over. Go to Home and clear the stack.
+            navController.navigate(Screen.Home.route) {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+            }
+        }
+    }
+
     when {
         // Case 1: All permissions granted, show the map.
         allPermissionsGranted -> {
@@ -151,7 +171,6 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
             val locationClient = remember { LocationClient(context) }
 
             // --- SIDE EFFECTS ---
-            LaunchedEffect(sessionId) { if (sessionId == null) { navController.popBackStack() } }
             LaunchedEffect(Unit) { locationClient.getLocationUpdates(5000L).collect { location -> latestUserLocation = LatLng(location.latitude, location.longitude) } }
             LaunchedEffect(latestUserLocation) { if (autoFollow && latestUserLocation != null) { cameraPositionState.animate(update = CameraUpdateFactory.newLatLngZoom(latestUserLocation!!, 15f)) } }
             LaunchedEffect(cameraPositionState.isMoving) { if (cameraPositionState.isMoving) { autoFollow = false } }
@@ -180,6 +199,25 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
 
             // --- MAP UI ---
             Box(modifier = Modifier.fillMaxSize()) {
+                if (sessionStatus == "payment_pending" && !isWalker) {
+                    AlertDialog(
+                        onDismissRequest = { /* Cannot dismiss */ },
+                        title = { Text("Session Ending") },
+                        text = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("The walker is processing the payment.")
+                                Spacer(Modifier.height(16.dp))
+                                CircularProgressIndicator()
+                                Spacer(Modifier.height(8.dp))
+                                Text("Please wait...")
+                            }
+                        },
+                        confirmButton = {} // No button, not dismissible
+                    )
+                }
                 // The GoogleMap is the bottom layer. Its content block is ONLY for map-related items.
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
@@ -268,12 +306,14 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                 ) {
                     Icon(imageVector = Icons.Default.MyLocation, contentDescription = "Re-center Map")
                 }
-                FloatingActionButton(
-                    onClick = { viewModel.endSession() },
-                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                ) {
-                    Icon(imageVector = Icons.Default.Done, contentDescription = "End Session")
+                if(isWalker){
+                    FloatingActionButton(
+                        onClick = { viewModel.endSession(isWalker) },
+                        modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                    ) {
+                        Icon(imageVector = Icons.Default.Done, contentDescription = "End Session")
+                    }
                 }
                 AnimatedVisibility(
                     visible = isWalker && isCloseEnough && sessionStatus == "active",

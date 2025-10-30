@@ -110,5 +110,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)// e.g., libs.androidx.ui.test.manifest (Add version)
 
+    //Async Image
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    //Razorpay Payment gateway
+    implementation("com.razorpay:checkout:1.6.41")
 }

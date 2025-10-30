@@ -247,9 +247,13 @@ class RealtimeRepo(
     }
     // In your Repo.kt file
 
-    fun updateSessionStatus(sessionId: String, status: String, onComplete: () -> Unit) {
-        db.child("requests").child(sessionId).child("status").setValue(status)
-            .addOnSuccessListener { onComplete() }
+    fun updateSessionStatus(sessionId: String, status: String) {
+        // 1. Removed the onComplete parameter
+        // 2. Changed "requests" to "sessions"
+        db.child("sessions").child(sessionId).child("status").setValue(status)
+            .addOnFailureListener {
+                Log.e("RealtimeRepo", "Failed to update session status: ${it.message}")
+            }
     }
 
     fun markArrived(sessionId: String, isWalker: Boolean) {
