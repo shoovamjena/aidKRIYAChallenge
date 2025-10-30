@@ -47,7 +47,7 @@ class ReviewRepo(
     }
 
     fun getReviewsForWanderer(wandererId: String,onResult:(List<Review>) -> Unit){
-        wanderer.document(wandererId).collection(REVIEW_PATH).get()
+        walker.document(wandererId).collection(REVIEW_PATH).get()
             .addOnSuccessListener {snapshots ->
                 val reviews = snapshots.toObjects(Review::class.java)
                 onResult(reviews)

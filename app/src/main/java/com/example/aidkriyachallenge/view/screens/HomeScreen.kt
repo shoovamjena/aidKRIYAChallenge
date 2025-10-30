@@ -50,12 +50,15 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.StackedLineChart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -63,8 +66,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -94,10 +99,13 @@ import coil.compose.AsyncImage
 import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.dataModel.Request
 import com.example.aidkriyachallenge.dataModel.Screen
+import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.ui.theme.inspDoc
 import com.example.aidkriyachallenge.ui.theme.odin
 import com.example.aidkriyachallenge.viewModel.MainViewModel
 import com.example.aidkriyachallenge.viewModel.MyViewModel
+import com.example.aidkriyachallenge.viewModel.ReviewTriggerInfo
+import com.example.aidkriyachallenge.viewModel.ReviewViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -154,6 +162,7 @@ fun HomeScreen(
     viewModel: MyViewModel,
     navController: NavController,
     mapRoutingViewModel: MainViewModel,
+    reviewViewModel: ReviewViewModel
 ) {
     val state by viewModel.Profilestate.collectAsState()
     val mapRoutingUserRole by mapRoutingViewModel.userRole.collectAsState()
@@ -172,6 +181,15 @@ fun HomeScreen(
 
     val totalEarnings by mapRoutingViewModel.totalEarnings.collectAsState()
     val earningsToShow by mapRoutingViewModel.showEarningsReceivedDialog.collectAsState()
+    val reviewTrigger by mapRoutingViewModel.reviewTrigger.collectAsState()
+
+    if (reviewTrigger != null) {
+        ReviewDialog(
+            reviewInfo = reviewTrigger!!,
+            mainViewModel = mapRoutingViewModel,
+            reviewViewModel = reviewViewModel
+        )
+    }
 
     if (earningsToShow != null) {
         val earningsInRupees = "%.2f".format(earningsToShow!! / 100.0)
@@ -378,62 +396,74 @@ fun HomeScreen(
                         shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
                     ),
             ) {
-                Box(
-                    modifier = Modifier
-                        .padding(15.dp)
-                        .size(80.dp)
-                        .align(Alignment.TopEnd)
-                        .clip(CircleShape) // Make it circular
-                        .border(2.dp, Color.White, CircleShape)
-                        .clickable {
-                            navController.navigate("profileSk")
-                        }
-                ) {
-                    AsyncImage(
-                        model = state.imageUri, // <-- Only pass the URI here
-                        error = painterResource(id = R.drawable.profile), // <-- Use 'error' for the default
-                        placeholder = painterResource(id = R.drawable.profile), // Optional: Show default while loading
-                        contentDescription = "Profile Image",
-                        modifier = Modifier.fillMaxSize(), // Fill the Box
-                        contentScale = ContentScale.Crop // Crop to fit circle
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        viewModel.logout()
-                        navController.navigate("welcome") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(top = 75.dp)
-                        .padding(40.dp)
-                        .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
-                        .align(Alignment.TopEnd)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_power_settings_new_24),
-                        contentDescription = "Profile Image",
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 50.dp, start = 25.dp),
-                ) {
-                    Text(
-                        "WELCOME",
-                        fontFamily = odin,
-                        fontSize = 46.sp,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                    )
+                Column (modifier = Modifier.matchParentSize()){
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(5.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(top = 50.dp, start = 25.dp),
+                        ) {
+                            Text(
+                                "WELCOME",
+                                fontFamily = odin,
+                                fontSize = 36.sp,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                            )
 
-                    Text(
-                        state.username,
-                        fontFamily = inspDoc,
-                        fontSize = 76.sp,
-                        color = Color(0xFF0F790E),
-                    )
+                            Text(
+                                state.username,
+                                fontFamily = inspDoc,
+                                fontSize = 56.sp,
+                                color = Color(0xFF0F790E),
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .padding(15.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(20.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(CircleShape) // Make it circular
+                                    .border(2.dp, Color.White, CircleShape)
+                                    .clickable {
+                                        navController.navigate("profileSk")
+                                    }
+                            ) {
+                                AsyncImage(
+                                    model = state.imageUri, // <-- Only pass the URI here
+                                    error = painterResource(id = R.drawable.profile), // <-- Use 'error' for the default
+                                    placeholder = painterResource(id = R.drawable.profile), // Optional: Show default while loading
+                                    contentDescription = "Profile Image",
+                                    modifier = Modifier.fillMaxSize(), // Fill the Box
+                                    contentScale = ContentScale.Crop // Crop to fit circle
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    viewModel.logout()
+                                    navController.navigate("welcome") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primary,
+                                        shape = CircleShape
+                                    )
+
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_power_settings_new_24),
+                                    contentDescription = "Profile Image",
+                                )
+                            }
+                        }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -456,9 +486,10 @@ fun HomeScreen(
                         ) {
                             Text(
                                 "SEE REVIEWS",
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.surface,
-                                modifier = Modifier.padding(10.dp)
+                                fontFamily = fredoka,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.padding(10.dp),
+
                             )
                         }
                         Box(
@@ -477,7 +508,7 @@ fun HomeScreen(
                             val totalInRupees = "%.2f".format(totalEarnings / 100.0)
                             Text(
                                 "Earnings: ₹$totalInRupees",
-                                fontFamily = odin,
+                                fontFamily = fredoka,
                                 color = MaterialTheme.colorScheme.secondaryContainer,
                                 maxLines = 1,
                                 autoSize = TextAutoSize.StepBased(
@@ -1008,5 +1039,106 @@ private fun WalkerMapMarker(request: Request) {
     }
 }
 
-// --- ADD THIS NEW COMPOSABLE TO HomeScreen.kt ---
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReviewDialog(
+    reviewInfo: ReviewTriggerInfo,
+    mainViewModel: MainViewModel,
+    reviewViewModel: ReviewViewModel
+) {
+    var rating by remember { mutableStateOf(0) }
+    var description by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    // Determine who the user is rating
+    val personToRate = if (reviewInfo.isWalker) "Companion" else "Walker"
+    val currentUserId = mainViewModel.currentUserId ?: ""
+
+    AlertDialog(
+        onDismissRequest = {
+            // Do not allow dismissing by clicking outside
+        },
+        title = { Text("Rate your $personToRate") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("How was your experience?")
+                Spacer(Modifier.height(16.dp))
+
+                // 5-Star Rating
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    (1..5).forEach { star ->
+                        Icon(
+                            imageVector = if (star <= rating) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = "Star $star",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { rating = star },
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+
+                // Description TextField
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Add a review (optional)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (rating == 0) {
+                        Toast.makeText(context, "Please select a rating", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    // User is a Walker, reviewing the Companion ("Wanderer")
+                    if (reviewInfo.isWalker) {
+                        reviewViewModel.addReviewForWanderer(
+                            wandererId = reviewInfo.companionId,
+                            review = description,
+                            walkid = reviewInfo.walkId,
+                            reviewerId = currentUserId,
+                            rating = rating
+                        )
+                    }
+                    // User is a Companion, reviewing the Walker
+                    else {
+                        reviewViewModel.addReviewForWalker(
+                            walkerId = reviewInfo.walkerId,
+                            review = description,
+                            walkid = reviewInfo.walkId,
+                            reviewerId = currentUserId,
+                            rating = rating
+                        )
+                    }
+
+                    // Dismiss the dialog
+                    mainViewModel.dismissReviewDialog()
+                },
+                // Disable button until a rating is given
+                enabled = rating > 0
+            ) {
+                Text("Rate")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    // Just dismiss the dialog
+                    mainViewModel.dismissReviewDialog()
+                }
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
 

@@ -40,6 +40,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class ReviewTriggerInfo(
+    val isWalker: Boolean,
+    val walkerId: String,
+    val companionId: String,
+    val walkId: String // The reviewRepo needs a 'walkid'. The requestId is perfect for this.
+)
+
 
 
 class MainViewModel(
@@ -64,6 +71,9 @@ class MainViewModel(
     // --- State Properties Exposed to the UI ---
     private val _repo = MutableStateFlow<RealtimeRepo?>(null)
     val repo = _repo.asStateFlow()
+    private val _reviewTrigger = MutableStateFlow<ReviewTriggerInfo?>(null)
+    val reviewTrigger = _reviewTrigger.asStateFlow()
+
 
     private val _userRole = MutableStateFlow<String?>(null)
     val userRole = _userRole.asStateFlow()
@@ -216,6 +226,7 @@ class MainViewModel(
     init {
         observeRequestChanges() // Start the smart observer
         observeActiveRequestForCancellations() // Start the cancellation observer
+        trackActiveRequestForCleanup()
         userPreferences.totalEarnings
             .onEach { earnings -> _totalEarnings.value = earnings }
             .launchIn(viewModelScope)
@@ -449,15 +460,28 @@ class MainViewModel(
 
         // Ensure we have all the info we need
         if (sessionToEnd != null && requestInfo != null && requestInfo.companionId != null) {
+
+            // --- 4. CAPTURE THE INFO ---
+            // We must do this *before* clearing the state!
+            val isCurrentUserWalker = currentUserId == requestInfo.walkerId
+            val reviewInfo = ReviewTriggerInfo(
+                isWalker = isCurrentUserWalker,
+                walkerId = requestInfo.walkerId,
+                companionId = requestInfo.companionId,
+                walkId = requestInfo.id // Use the request ID as the "walkId"
+            )
+
+            // This part is the same as before
             repo.value?.endSession(
                 sessionToEnd,
-                requestInfo.id, // <-- PASS THE REQUEST ID HERE
+                requestInfo.id,
                 requestInfo.walkerId,
                 requestInfo.companionId
             ) {
                 viewModelScope.launch {
                     UserPreferences(context).clearSessionId()
                 }
+
                 // This local state reset logic remains the same
                 removeLocationListener()
                 removeSessionStatusListener()
@@ -468,10 +492,20 @@ class MainViewModel(
                 _routePoints.value = emptyList()
                 _sessionStatus.value = "active"
                 _isCloseEnoughToStartWalk.value = false
+
+                // --- 5. SET THE TRIGGER ---
+                // This will be emitted *after* sessionId is null.
+                // The user will navigate home AND this will trigger the dialog.
+                _reviewTrigger.value = reviewInfo
             }
         } else {
             Log.e("MainViewModel", "completeSessionCleanup called but session or request info is missing.")
         }
+    }
+
+    // 6. ADD THIS FUNCTION TO DISMISS THE DIALOG
+    fun dismissReviewDialog() {
+        _reviewTrigger.value = null
     }
     fun endSession(isWalker: Boolean) {
         val currentSessionId = _sessionId.value ?: return
@@ -673,5 +707,49 @@ class MainViewModel(
         _sessionId.value = sessionId
         // This will fetch the request data and start all the necessary listeners
         listenToActiveRequest(requestId)
+    }
+    private fun trackActiveRequestForCleanup() {
+        viewModelScope.launch {
+            var previousRequest: Request? = null // Holds the last known request
+
+            _activeRequest.collect { currentRequest ->
+
+                // Check if the state just changed from "had a request" to "no request"
+                if (previousRequest != null && currentRequest == null) {
+
+                    // --- THIS IS THE COMPANION'S CLEANUP ---
+                    Log.d("MainViewModel", "Active request became null. Running Companion cleanup.")
+
+                    // 1. Create the review trigger for the Companion
+                    val reviewInfo = ReviewTriggerInfo(
+                        isWalker = false, // We know this is the Companion
+                        walkerId = previousRequest!!.walkerId,
+                        companionId = previousRequest!!.companionId ?: "",
+                        walkId = previousRequest!!.id
+                    )
+
+                    // 2. Run all the same cleanup logic
+                    viewModelScope.launch {
+                        UserPreferences(context).clearSessionId()
+                    }
+                    removeLocationListener()
+                    removeSessionStatusListener()
+                    _userStatus.value = "idle"
+                    _locations.value = emptyMap()
+                    _routePoints.value = emptyList()
+                    _sessionStatus.value = "active"
+                    _isCloseEnoughToStartWalk.value = false
+
+                    // 3. Set the review trigger
+                    _reviewTrigger.value = reviewInfo
+
+                    // 4. Set sessionId to null TO TRIGGER NAVIGATION
+                    _sessionId.value = null
+                }
+
+                // Update the 'previous' value for the next collection
+                previousRequest = currentRequest
+            }
+        }
     }
 }

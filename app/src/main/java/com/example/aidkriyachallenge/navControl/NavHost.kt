@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 fun AppNavHost(
     viewModel: MyViewModel,
     reviewViewModel: ReviewViewModel,
-    mapRoutingViewModel: MainViewModel
+    mapRoutingViewModel: MainViewModel,
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsState()
@@ -147,7 +147,8 @@ fun AppNavHost(
             HomeScreen(
                 viewModel = viewModel,
                 mapRoutingViewModel = mapRoutingViewModel,
-                navController = navController
+                navController = navController,
+                reviewViewModel = reviewViewModel
             )
         }
 
