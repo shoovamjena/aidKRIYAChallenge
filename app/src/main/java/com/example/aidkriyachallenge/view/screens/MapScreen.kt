@@ -76,6 +76,7 @@ import coil.request.ImageRequest
 import com.example.aidkriyachallenge.dataModel.Screen
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
     // --- STATE COLLECTION ---
@@ -210,7 +211,7 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                             ) {
                                 Text("The walker is processing the payment.")
                                 Spacer(Modifier.height(16.dp))
-                                CircularProgressIndicator()
+                                ContainedLoadingIndicator()
                                 Spacer(Modifier.height(8.dp))
                                 Text("Please wait...")
                             }
@@ -302,14 +303,18 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                             coroutineScope.launch { cameraPositionState.animate(update = CameraUpdateFactory.newLatLngZoom(latestUserLocation!!, 15f)) }
                         }
                     },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).windowInsetsPadding(
+                        WindowInsets.navigationBars
+                    )
                 ) {
                     Icon(imageVector = Icons.Default.MyLocation, contentDescription = "Re-center Map")
                 }
                 if(isWalker){
                     FloatingActionButton(
                         onClick = { viewModel.endSession(isWalker) },
-                        modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                        modifier = Modifier.align(Alignment.BottomStart).padding(16.dp).windowInsetsPadding(
+                            WindowInsets.navigationBars
+                        ),
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                     ) {
                         Icon(imageVector = Icons.Default.Done, contentDescription = "End Session")
@@ -321,7 +326,9 @@ fun MapScreen(viewModel: MainViewModel, navController: NavHostController) {
                 ) {
                     ExtendedFloatingActionButton(
                         onClick = { viewModel.beginWalkingSession() },
-                        modifier = Modifier.padding(bottom = 16.dp),
+                        modifier = Modifier.padding(bottom = 16.dp).windowInsetsPadding(
+                            WindowInsets.navigationBars
+                        ),
                         icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
                         text = { Text("Start Walking") }
                     )

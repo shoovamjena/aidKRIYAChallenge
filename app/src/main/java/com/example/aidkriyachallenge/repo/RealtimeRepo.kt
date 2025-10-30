@@ -37,13 +37,16 @@ class RealtimeRepo(
     // In RealtimeRepo.kt
 
     fun raiseCall(
+        gender:String,
+        walkingSpeed:String,
         latitude: Double,
         longitude: Double,
         destLat: Double,
         destLng: Double,
         walkerName: String,
         profileImageUrl: String?, // Receives the String? from ViewModel
-        onSuccess: (requestId: String) -> Unit
+        onSuccess: (requestId: String) -> Unit,
+
     ) {
         val requestRef = db.child("requests").push()
         val requestId = requestRef.key ?: return
@@ -62,7 +65,10 @@ class RealtimeRepo(
             "destLat" to destLat,
             "destLng" to destLng,
             "walkerName" to walkerName,
-            "profileImageUrl" to finalUrl // This is now safe (it's "" not null)
+            "profileImageUrl" to finalUrl,
+            "gender" to gender,
+            "walkingSpeed" to walkingSpeed
+            // This is now safe (it's "" not null)
         )
 
         // This will no longer crash.

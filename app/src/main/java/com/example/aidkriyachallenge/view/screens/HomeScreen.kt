@@ -57,8 +57,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -67,6 +68,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -265,7 +267,9 @@ fun HomeScreen(
             mapRoutingViewModel.raiseCall(
                 destination = dest,
                 walkerName = state.username,
-                imageUrl = state.imageUri // <-- Pass the Uri? object
+                imageUrl = state.imageUri, // <-- Pass the Uri? object
+                genders = state.gender,
+                walkingSpeed = state.walkingSpeed
             )
 
             backStackEntry?.savedStateHandle?.remove<LatLng>("destination_location")
@@ -389,8 +393,8 @@ fun HomeScreen(
                     .background(
                         brush = Brush.verticalGradient(
                             listOf(
-                                MaterialTheme.colorScheme.tertiary,
-                                MaterialTheme.colorScheme.surfaceTint,
+                                MaterialTheme.colorScheme.tertiaryContainer,
+                                MaterialTheme.colorScheme.primaryContainer,
                             )
                         ),
                         shape = RoundedCornerShape(bottomEndPercent = 20, bottomStartPercent = 20)
@@ -409,7 +413,7 @@ fun HomeScreen(
                                 "WELCOME",
                                 fontFamily = odin,
                                 fontSize = 36.sp,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                color = MaterialTheme.colorScheme.secondary,
                             )
 
                             Text(
@@ -487,7 +491,7 @@ fun HomeScreen(
                             Text(
                                 "SEE REVIEWS",
                                 fontFamily = fredoka,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.padding(10.dp),
 
                             )
@@ -509,7 +513,7 @@ fun HomeScreen(
                             Text(
                                 "Earnings: ₹$totalInRupees",
                                 fontFamily = fredoka,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                color = MaterialTheme.colorScheme.secondary,
                                 maxLines = 1,
                                 autoSize = TextAutoSize.StepBased(
                                     maxFontSize = 18.sp
@@ -530,7 +534,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(10.dp)
                     .clip(RoundedCornerShape(25.dp))
-                    .background(MaterialTheme.colorScheme.primary)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .height(150.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp), // This replaces 'itemSpacing'
                 contentPadding = PaddingValues(horizontal = 10.dp),  // This is the same
@@ -546,10 +550,11 @@ fun HomeScreen(
             // --- Map and Button Box ---
             Box(
                 modifier = Modifier
-                    .shadow(5.dp, RoundedCornerShape(15))
-                    .clip(RoundedCornerShape(15))
+                    .shadow(5.dp, RoundedCornerShape(10))
+                    .clip(RoundedCornerShape(10))
                     .weight(1f) // Fills remaining vertical space
                     .fillMaxWidth(0.9f)
+                    .background(MaterialTheme.colorScheme.surface)
 
             ) {
                 // --- LAYER 1: The Google Map ---
@@ -619,14 +624,14 @@ fun HomeScreen(
                             // Path 1: Companion to Walker (Blue)
                             Polyline(
                                 points = listOf(companionLatLng, walkerLatLng),
-                                color = Color.Blue,
+                                color = Color(0xFFF2B544),
                                 width = 10f
                             )
 
                             // Path 2: Walker to Destination (Green)
                             Polyline(
                                 points = listOf(walkerLatLng, destinationLatLng),
-                                color = Color(0xFF0F790E), // Using your app's green
+                                color = Color(0xFF4CB5A1), // Using your app's green
                                 width = 10f
                             )
                         }
@@ -672,7 +677,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 16.dp)
-                            .fillMaxWidth(),
+                            .fillMaxWidth(0.8f),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         radiusOptions.forEach { radiusInMeters ->
@@ -683,7 +688,10 @@ fun HomeScreen(
                                 label = { Text("${radiusInMeters / 1000} km") },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                    containerColor  = Color.Transparent,
+                                    labelColor = Color(0xFF055A4A)
+
                                 )
                             )
                         }
@@ -729,6 +737,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @SuppressLint("DefaultLocale")
 @Composable
 private fun WalkerFlowUI(
@@ -761,16 +770,18 @@ private fun WalkerFlowUI(
 
         // State 2: Request sent, no companion yet.
         activeRequest?.companionId == null -> {
-            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(4.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(),colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primaryContainer.copy(0.5f))) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         "Looking for a companion...",
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = fredoka,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    ContainedLoadingIndicator()
                 }
             }
         }
@@ -807,17 +818,19 @@ private fun WalkerFlowUI(
             }
 
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(MaterialTheme.colorScheme.primaryContainer.copy(0.5f))
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
                         .padding(16.dp)
                         .fillMaxWidth()
+
                 ) {
-                    Text("Companion Found!", style = MaterialTheme.typography.headlineMedium)
+                    Text("Companion Found!", style = MaterialTheme.typography.headlineMedium, fontFamily = fredoka, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(8.dp))
-                    Text("Your potential companion is $distance")
+                    Text("Your potential companion is $distance", fontFamily = fredoka, color = MaterialTheme.colorScheme.primary.copy(0.7f))
                     Spacer(Modifier.height(16.dp))
                     Row {
                         Button(
@@ -845,7 +858,7 @@ private fun StatCard(item: StatItem) {
             .height(130.dp),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(
             modifier = Modifier
@@ -858,18 +871,20 @@ private fun StatCard(item: StatItem) {
                 imageVector = item.icon,
                 contentDescription = item.title,
                 modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.primaryContainer
+                tint = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = item.value,
                 style = MaterialTheme.typography.titleSmall,
+                fontFamily = fredoka,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = Color.Gray,
+                fontFamily = fredoka
             )
         }
     }
@@ -913,7 +928,8 @@ private fun WalkerInfoCard(
             .fillMaxWidth()
             .padding(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.secondaryContainer)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -942,37 +958,47 @@ private fun WalkerInfoCard(
                 request.walkerName?.let {
                     Text(
                         text = it, // <-- Use name from request
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        fontFamily = fredoka,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
                 Text(
                     text = distance, // This is Companion -> Walker
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    fontFamily = fredoka,
+                    color = MaterialTheme.colorScheme.primary.copy(0.7f)
                 )
 
                 // --- NEW: Display the walk distance ---
                 Text(
                     text = "Walk Distance: $walkDistance", // This is Walker -> Dest
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontFamily = fredoka
                 )
                 // --- END NEW ---
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.tertiary)
 
                 // --- TODO: Populate this from your Request object ---
                 Text(
-                    text = "Gender: N/A", // <-- Replace with request.gender
-                    style = MaterialTheme.typography.bodySmall
+                    text = "Gender: ${request.gender}", // <-- Replace with request.gender
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = fredoka
                 )
                 Text(
-                    text = "Speed: N/A", // <-- Replace with request.speed
-                    style = MaterialTheme.typography.bodySmall
+                    text = "Speed: ${request.walkingSpeed}", // <-- Replace with request.speed
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = fredoka
+
                 )
                 Text(
                     text = "Rating: ☆ 0.0", // <-- Replace with request.rating
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = fredoka
+
                 )
             }
 
@@ -1021,7 +1047,7 @@ private fun WalkerMapMarker(request: Request) {
             imageVector = Icons.Default.Place, // Built-in material icon
             contentDescription = "Map Pin",
             modifier = Modifier.fillMaxSize(),
-            tint = MaterialTheme.colorScheme.primary // Tint it to your app's theme
+            tint = MaterialTheme.colorScheme.primaryContainer // Tint it to your app's theme
         )
         // 2. The circular profile image
         AsyncImage(
@@ -1058,10 +1084,11 @@ private fun ReviewDialog(
         onDismissRequest = {
             // Do not allow dismissing by clicking outside
         },
-        title = { Text("Rate your $personToRate") },
+        title = { Text("Rate your $personToRate", fontFamily = fredoka, color = MaterialTheme.colorScheme.primary) },
+        containerColor = MaterialTheme.colorScheme.surface,
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("How was your experience?")
+                Text("How was your experience?",fontFamily = fredoka, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(16.dp))
 
                 // 5-Star Rating
@@ -1076,7 +1103,7 @@ private fun ReviewDialog(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clickable { rating = star },
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -1086,13 +1113,15 @@ private fun ReviewDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Add a review (optional)") },
-                    modifier = Modifier.fillMaxWidth()
+                    label = { Text("Add a review (optional)",fontFamily = fredoka, color = MaterialTheme.colorScheme.primary) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = OutlinedTextFieldDefaults.shape
                 )
             }
         },
         confirmButton = {
             Button(
+                colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary),
                 onClick = {
                     if (rating == 0) {
                         Toast.makeText(context, "Please select a rating", Toast.LENGTH_SHORT).show()
@@ -1126,7 +1155,7 @@ private fun ReviewDialog(
                 // Disable button until a rating is given
                 enabled = rating > 0
             ) {
-                Text("Rate")
+                Text("Rate",fontFamily = fredoka, color = MaterialTheme.colorScheme.secondaryContainer)
             }
         },
         dismissButton = {
@@ -1136,7 +1165,7 @@ private fun ReviewDialog(
                     mainViewModel.dismissReviewDialog()
                 }
             ) {
-                Text("Cancel")
+                Text("Cancel",fontFamily = fredoka, color = MaterialTheme.colorScheme.error)
             }
         }
     )

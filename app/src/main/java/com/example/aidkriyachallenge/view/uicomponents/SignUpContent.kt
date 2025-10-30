@@ -50,6 +50,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -78,6 +81,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -133,8 +137,9 @@ fun SignUpContent(
 
     var isError by remember { mutableStateOf(false) }
 
-    var expanded by remember { mutableStateOf(false) }
-    var selectedRole by remember { mutableStateOf("Walker") }
+    // No longer needed for Dropdown
+    // var expanded by remember { mutableStateOf(false) }
+    // var selectedRole by remember { mutableStateOf("Walker") }
 
     // Animated drag offset with bounce-back
     val animatedDragOffset by animateFloatAsState(
@@ -147,7 +152,7 @@ fun SignUpContent(
         } else {
             spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessVeryLow
+                 stiffness = Spring.StiffnessVeryLow
             )
         },
         label = "dragAnimation"
@@ -299,42 +304,44 @@ fun SignUpContent(
                     },
                 )
 
-                OutlinedTextField(
-                    value = if(role) "Wanderer" else "Walker",
-                    onValueChange = {},
-                    label = { Text("Role") },
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown, contentDescription = null,
-                            Modifier.clickable { expanded = !expanded })
+                // --- MODIFICATION START ---
+                // Role Description (The "Overlay" text)
+                Text(
+                    text = if (role) { // role == true is Wanderer
+                        "As a Wanderer, you'll provide assistance and company."
+                    } else { // role == false is Walker
+                        "As a Walker, you can request companionship for your walks."
                     },
-                    modifier = Modifier.fillMaxWidth().height(80.dp)
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape(50)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
                 )
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                // Role Selection Button Group
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Walker") },
-                        onClick = {
-                            selectedRole = "Walker"
-                            onRoleChanged(false)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Wanderer") },
-                        onClick = {
-                            selectedRole = "Wanderer"
-                            onRoleChanged(true)
-                            expanded = false
-                        }
-                    )
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        onClick = { onRoleChanged(false) },
+                        selected = !role // role=false is Walker
+                    ) {
+                        Text("Walker")
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        onClick = { onRoleChanged(true) },
+                        selected = role // role=true is Wanderer
+                    ) {
+                        Text("Wanderer")
+                    }
                 }
+                // --- MODIFICATION END ---
 
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp),
@@ -409,9 +416,9 @@ fun SignUpContent(
                         ),
                         modifier = Modifier
                             .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-                            onLogin()
-                        }
+                                haptic.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                                onLogin()
+                            }
                             .weight(0.5f)
                     )
                 }
@@ -504,20 +511,20 @@ fun SignUpContent(
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                                if (isDragged) {
-                                    LottieAnimation(
-                                        composition = loadingLottieComposition,
-                                        progress =  loadingProgress ,
-                                        modifier = Modifier.size(50.dp),
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(R.drawable.next),
-                                        contentDescription = "Arrow Icon",
-                                        modifier = Modifier.size(25.dp),
-                                        tint = if(!isDark) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.secondary
-                                    )
-                                }
+                            if (isDragged) {
+                                LottieAnimation(
+                                    composition = loadingLottieComposition,
+                                    progress =  loadingProgress ,
+                                    modifier = Modifier.size(50.dp),
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.next),
+                                    contentDescription = "Arrow Icon",
+                                    modifier = Modifier.size(25.dp),
+                                    tint = if(!isDark) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.secondary
+                                )
+                            }
 
                         }
                         // Login text with fade animation
@@ -615,42 +622,48 @@ fun SignUpContent(
                         }
                     }
                 )
-                OutlinedTextField(
-                    value = if(role) "Wanderer" else "Walker",
-                    onValueChange = {},
-                    label = { Text("Role") },
-                    readOnly = true,
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.ArrowDropDown, contentDescription = null,
-                            Modifier.clickable { expanded = !expanded })
+
+                // --- MODIFICATION START ---
+                // Role Description (The "Overlay" text)
+                Text(
+                    text = if (role) { // role == true is Wanderer
+                        "As a Wanderer, you can request companionship for your walks."
+                    } else { // role == false is Walker
+                        "As a Walker, you'll provide assistance and company."
                     },
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(horizontal = 10.dp),
-                    shape = RoundedCornerShape(50)
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 )
 
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                // Role Selection Button Group
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp)
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Walker") },
-                        onClick = {
-                            selectedRole = "Walker"
-                            onRoleChanged(false)
-                            expanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Wanderer") },
-                        onClick = {
-                            selectedRole = "Wanderer"
-                            onRoleChanged(true)
-                            expanded = false
-                        }
-                    )
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        onClick = { onRoleChanged(false) },
+                        selected = !role, // role=false is Walker
+                        colors = SegmentedButtonDefaults.colors(MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Text("Walker")
+                    }
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        onClick = { onRoleChanged(true) },
+                        selected = role, // role=true is Wanderer
+                        colors = SegmentedButtonDefaults.colors(MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Text("Wanderer")
+                    }
                 }
+                // --- MODIFICATION END ---
+
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -807,19 +820,19 @@ fun SignUpContent(
                             contentAlignment = Alignment.Center
                         ) {
                             if(isDragged) {
-                                    LottieAnimation(
-                                        composition = loadingLottieComposition,
-                                        progress = loadingProgress ,
-                                        modifier = Modifier.size(50.dp),
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(R.drawable.next),
-                                        contentDescription = "Arrow Icon",
-                                        modifier = Modifier.size(25.dp),
-                                        tint = if(!isDark) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.secondary
-                                    )
-                                }
+                                LottieAnimation(
+                                    composition = loadingLottieComposition,
+                                    progress = loadingProgress ,
+                                    modifier = Modifier.size(50.dp),
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(R.drawable.next),
+                                    contentDescription = "Arrow Icon",
+                                    modifier = Modifier.size(25.dp),
+                                    tint = if(!isDark) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.secondary
+                                )
+                            }
 
                         }
                         // Login text with fade animation

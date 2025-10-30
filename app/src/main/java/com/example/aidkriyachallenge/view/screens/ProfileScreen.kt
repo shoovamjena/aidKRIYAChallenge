@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
@@ -57,12 +58,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.aidkriyachallenge.R
 import com.example.aidkriyachallenge.dataModel.UserProfile
+import com.example.aidkriyachallenge.ui.theme.fredoka
 import com.example.aidkriyachallenge.viewModel.MyViewModel
 
 @Composable
@@ -98,7 +101,7 @@ fun ProfileScreen(viewModel: MyViewModel,
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.3f)
+                .fillMaxHeight(0.4f)
                 .shadow(5.dp, RoundedCornerShape(bottomEndPercent = 25, bottomStartPercent = 25))
                 .background(
                     brush = Brush.verticalGradient(
@@ -142,7 +145,8 @@ fun ProfileScreen(viewModel: MyViewModel,
                             fontSize = 28.sp,
                             modifier = Modifier
                                 .padding(vertical = 10.dp)
-                                .align(Alignment.CenterHorizontally)
+                                .align(Alignment.CenterHorizontally),fontFamily = fredoka
+
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -156,7 +160,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                                     .padding(horizontal = 10.dp)
                             ) {
                                 Text(
-                                    if (isWanderer == true) "Wanderer" else "Walker"
+                                    if (isWanderer == true) "Wanderer" else "Walker",fontFamily = fredoka
                                 )
                             }
                             Box(
@@ -167,7 +171,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                                     .padding(horizontal = 10.dp)
                             ) {
                                 Text(
-                                    state.gender.orDefault()
+                                    state.gender.orDefault(),fontFamily = fredoka
                                 )
                             }
                             Box(
@@ -178,7 +182,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                                     .padding(horizontal = 10.dp)
                             ) {
                                 Text(
-                                    state.walkingSpeed.orDefault()
+                                    state.walkingSpeed.orDefault(),fontFamily = fredoka, maxLines = 1, autoSize = TextAutoSize.StepBased(maxFontSize = 24.sp)
                                 )
                             }
                         }
@@ -202,12 +206,12 @@ fun ProfileScreen(viewModel: MyViewModel,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "4.5",
+                                "5",
                                 fontSize = 28.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                fontWeight = FontWeight.ExtraBold,fontFamily = fredoka
                             )
                             Text(
-                                "Rating"
+                                "Rating",fontFamily = fredoka
                             )
                         }
                     }
@@ -221,10 +225,12 @@ fun ProfileScreen(viewModel: MyViewModel,
                         Text(
                             "50 km",
                             fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.ExtraBold,fontFamily = fredoka
+
                         )
                         Text(
-                            "Walked"
+                            "Walked",fontFamily = fredoka
+
                         )
                     }
 
@@ -249,7 +255,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                 ) {
                     Text(
                         "SEE REVIEWS",
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.ExtraBold,fontFamily = fredoka
                     )
                 }
             }
@@ -257,7 +263,7 @@ fun ProfileScreen(viewModel: MyViewModel,
         Column(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(top = 300.dp)
+                .padding(top = 350.dp)
             ,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -265,7 +271,8 @@ fun ProfileScreen(viewModel: MyViewModel,
                 "ADDRESS",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),fontFamily = fredoka
+
             )
             Box(
                 modifier = Modifier
@@ -276,14 +283,16 @@ fun ProfileScreen(viewModel: MyViewModel,
                 Text(
                     state.address.ifEmpty { "No address given" },
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(10.dp)
+                    modifier = Modifier.padding(10.dp),
+                    fontFamily = fredoka
                 )
             }
             Text(
                 "DESCRIPTION",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                fontFamily = fredoka
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -297,7 +306,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                 Text(
                     state.description.ifEmpty { "No description available" },
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(10.dp)
+                    modifier = Modifier.padding(10.dp),fontFamily = fredoka
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -333,7 +342,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                 modifier = Modifier
                     .padding(20.dp)
                     .size(100.dp) // Matched to your Edit button
-                    .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(25))
+                    .background(MaterialTheme.colorScheme.secondary, shape = RoundedCornerShape(25))
                     .align(Alignment.BottomStart) // Aligned to the bottom-left
             ) {
                 Icon(
@@ -362,13 +371,15 @@ fun ProfileScreen(viewModel: MyViewModel,
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
                         .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         "Edit Profile",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        fontFamily = fredoka
                     )
                     Box(
                         modifier = Modifier
@@ -396,21 +407,21 @@ fun ProfileScreen(viewModel: MyViewModel,
                     }
 
                     Button(onClick = { launcher.launch("image/*") }) {
-                        Text("Change Profile Picture")
+                        Text("Change Profile Picture",fontFamily = fredoka)
                     }
 
                     // Username
                     OutlinedTextField(
                         value = state.username,
                         onValueChange = { viewModel.onUsernameChanged(it) },
-                        label = { Text("Username") },
+                        label = { Text("Username",fontFamily = fredoka) },
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     // Show calculated age (always read-only, from DOB)
                     state.dob?.let {
                         val age = UserProfile(dob = it, isWanderer = isWanderer == true).calculateAge()
-                        Text("Age: $age years", style = MaterialTheme.typography.bodyMedium)
+                        Text("Age: $age years", style = MaterialTheme.typography.bodyMedium,fontFamily = fredoka)
                     }
 
                     // Gender Selection - Segmented Button
@@ -418,7 +429,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                         Text(
                             "Gender",
                             style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp),fontFamily = fredoka
                         )
                         val genderOptions = listOf("Male", "Female", "Other")
                         val selectedGenderIndex = genderOptions.indexOf(state.gender).takeIf { it >= 0 } ?: -1
@@ -433,9 +444,9 @@ fun ProfileScreen(viewModel: MyViewModel,
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = genderOptions.size
-                                    )
+                                    ), colors = SegmentedButtonDefaults.colors(MaterialTheme.colorScheme.primaryContainer)
                                 ) {
-                                    Text(gender)
+                                    Text(gender,fontFamily = fredoka,color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -444,7 +455,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                     OutlinedTextField(
                         value = state.address,
                         onValueChange = { viewModel.onAddressChanged(it) },
-                        label = { Text("Address") },
+                        label = { Text("Address",fontFamily = fredoka) },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -453,6 +464,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                     Column {
                         Text(
                             "Role",
+                            fontFamily = fredoka,
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
@@ -470,9 +482,9 @@ fun ProfileScreen(viewModel: MyViewModel,
                                         index = index,
                                         count = roleOptions.size
                                     ),
-                                    enabled = false
+                                    enabled = false, colors = SegmentedButtonDefaults.colors(MaterialTheme.colorScheme.primaryContainer)
                                 ) {
-                                    Text(role)
+                                    Text(role,fontFamily = fredoka)
                                 }
                             }
                         }
@@ -483,7 +495,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                         Text(
                             "Walking Speed",
                             style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp),fontFamily = fredoka
                         )
                         val speedOptions = listOf("Slow", "Medium", "Fast")
                         val selectedSpeedIndex = speedOptions.indexOf(state.walkingSpeed).takeIf { it >= 0 } ?: -1
@@ -498,9 +510,9 @@ fun ProfileScreen(viewModel: MyViewModel,
                                     shape = SegmentedButtonDefaults.itemShape(
                                         index = index,
                                         count = speedOptions.size
-                                    )
+                                    ), colors = SegmentedButtonDefaults.colors(MaterialTheme.colorScheme.primaryContainer)
                                 ) {
-                                    Text(speed)
+                                    Text(speed,fontFamily = fredoka, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -527,7 +539,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Save")
+                            Text("Save",fontFamily = fredoka)
                         }
                         OutlinedButton(
                             onClick = {
@@ -536,7 +548,7 @@ fun ProfileScreen(viewModel: MyViewModel,
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Cancel")
+                            Text("Cancel",fontFamily = fredoka)
                         }
                     }
                 }

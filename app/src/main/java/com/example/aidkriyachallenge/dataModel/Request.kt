@@ -19,4 +19,6 @@ data class Request(
     val companionArrived: Boolean = false,
     val profileImageUrl: String? = null,
     val walkerName: String? = null,
+    val gender:String? = null,
+    val walkingSpeed:String? = null
 )

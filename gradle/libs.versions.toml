@@ -19,7 +19,6 @@ mapsComposeUtils = "6.12.1"
 materialIconsExtended = "1.7.8" # Example, use your actual version
 adaptive = "1.2.0"
 material3WindowSizeClass = "1.4.0" # Example, use your actual version
-material3Expressive = "1.5.0-alpha06"
 firebaseDatabase = "22.0.1"
 
 # Firebase (BOM version managed in build.gradle.kts)
@@ -51,7 +50,9 @@ firebaseDatabaseKtx = "22.0.1"
 firebaseCommonKtx = "22.0.1"
 firebaseAuth = "24.0.1"
 firebaseFirestore = "26.0.2"
-firebaseStorage = "22.0.1" # Renamed from espressoCore
+firebaseStorage = "22.0.1"
+material3 = "1.5.0-alpha07"
+material3Version = "1.5.0-alpha07" # Renamed from espressoCore
 
 [libraries]
 # AndroidX Core & Lifecycle
@@ -67,11 +68,9 @@ androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 androidx-compose-material3-windowSizeClass = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
-androidx-material3-expressive = {group = "androidx.compose.material3", name = "material3-expressive", version.ref = "material3Expressive"}
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidxNavigationCompose" }
 # Window Manager & Splashscreen
@@ -122,7 +121,9 @@ google-firebase-database-ktx = { group = "com.google.firebase", name = "firebase
 firebase-common-ktx = { group = "com.google.firebase", name = "firebase-common-ktx", version.ref = "firebaseCommonKtx" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
-firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" } # Version from Compose BOM
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage", version.ref = "firebaseStorage" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3Version" } # Version from Compose BOM
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

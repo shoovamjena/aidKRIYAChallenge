@@ -56,7 +56,6 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
     implementation(libs.androidx.material.iconsExtended)
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.material3.windowSizeClass)
@@ -99,6 +98,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.material3)
 
     // --- Testing ---
     testImplementation(libs.junit)
@@ -115,4 +116,6 @@ dependencies {
 
     //Razorpay Payment gateway
     implementation("com.razorpay:checkout:1.6.41")
+
+
 }

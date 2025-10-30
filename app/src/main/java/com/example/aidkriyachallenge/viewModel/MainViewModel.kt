@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.checkerframework.checker.units.qual.Speed
 
 data class ReviewTriggerInfo(
     val isWalker: Boolean,
@@ -286,7 +287,7 @@ class MainViewModel(
 
     // In MainViewModel.kt
 
-    fun raiseCall(destination: LatLng, walkerName: String, imageUrl: android.net.Uri?) {
+    fun raiseCall(destination: LatLng, walkerName: String, imageUrl: android.net.Uri?,genders: String,walkingSpeed: String) {
         viewModelScope.launch {
             val repo = _repo.value ?: return@launch
             try {
@@ -299,6 +300,8 @@ class MainViewModel(
                     destLat = destination.latitude,
                     destLng = destination.longitude,
                     walkerName = walkerName,
+                    gender = genders,
+                    walkingSpeed = walkingSpeed,
                     // This is 100% correct.
                     // It converts the https://... Uri into a String?
                     profileImageUrl = imageUrl?.toString(),

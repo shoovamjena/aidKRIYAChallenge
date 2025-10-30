@@ -5,13 +5,13 @@ import androidx.compose.ui.graphics.Color
 // Primary (Teal-Green)
 val AidTeal = Color(0xFF4CB5A1)
 val OnAidTeal = Color(0xFFFFFFFF)
-val AidTealLight = Color(0xFFA9E6DB)
+val AidTealLight = Color(0xFFBDF8ED)
 val AidTealDark = Color(0xFF2F6D61)
 
 // Secondary (Golden-Yellow)
 val KriyaGold = Color(0xFFF2B544)
 val OnKriyaGold = Color(0xFF000000)
-val KriyaGoldLight = Color(0xFFFCE8B2)
+val KriyaGoldLight = Color(0xFFFAEAC4)
 val KriyaGoldDark = Color(0xFFB97D16)
 
 // Tertiary (Support Accent, Soft Orange/Amber)
